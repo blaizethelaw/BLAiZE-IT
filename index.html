@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>BLAiZE IT Solutions</title>
+    <meta name="description" content="IT Solutions for Business and Home" />
+    <link rel="icon" type="image/png" href="/blaize-logo.png" />
+    <meta property="og:title" content="BLAiZE IT Solutions" />
+    <meta property="og:description" content="IT Solutions for Business and Home" />
+    <meta property="og:image" content="/blaize-logo.webp" />
+    <meta property="og:url" content="https://www.blaizeit.com/" />
+    <meta property="og:type" content="website" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <link rel="canonical" href="https://www.blaizeit.com/" />
+    <link rel="icon" type="image/webp" href="/blaize-logo.webp" />
+    <link rel="manifest" href="/manifest.webmanifest" />
+  </head>
+  <body class="bg-blaize-dark">
+    <div id="root"></div>
+    <script type="module" src="/src/main.jsx"></script>
+    <script type="module">
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('/sw.js');
+        });
+      }
+    </script>
+  </body>
+</html>

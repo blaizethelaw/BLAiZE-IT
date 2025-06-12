@@ -1,0 +1,8 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Set the entire site background to slate */
+body {
+  @apply bg-blaize-slate text-white;
+}
