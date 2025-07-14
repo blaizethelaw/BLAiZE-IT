@@ -20,4 +20,14 @@ blaize-it/
         ├── BookingPage.jsx
         ├── TestimonialsPage.jsx
         └── ContactPage.jsx
-        new line
+
+## Running Tests
+
+Install dependencies and run:
+
+```bash
+npm test
+```
+
+This will execute Jest unit tests for React components.
+
