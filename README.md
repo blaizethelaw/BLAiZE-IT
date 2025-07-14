@@ -72,6 +72,7 @@ blaize-it/
     └── pages/
         ├── AboutPage.jsx
         ├── BookingPage.jsx
+ codex/create-detailed-readme-for-website
         ├── ContactPage.jsx
         ├── HomePage.jsx
         ├── ServicesPage.jsx
@@ -89,3 +90,25 @@ You can adjust the theme colours and drop shadows in **tailwind.config.js**. The
 ---
 
 © 2024 BLAiZE IT Solutions — IT Solutions for Business and Home
+=======
+        ├── TestimonialsPage.jsx
+        └── ContactPage.jsx
+ codex/add-license-file-and-update-readme
+        new line
+
+## License
+
+This project is licensed under the [MIT License](./LICENSE).
+=======
+
+## Running Tests
+
+Install dependencies and run:
+
+```bash
+npm test
+```
+
+This will execute Jest unit tests for React components.
+
+
