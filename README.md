@@ -12,7 +12,14 @@ blaize-it/
     ├── index.css
     ├── App.jsx
     ├── components/
-    │   └── MainLayout.jsx
+    │   ├── AboutSection.jsx
+    │   ├── BookingButton.jsx
+    │   ├── ContactSection.jsx
+    │   ├── HeroSection.jsx
+    │   ├── Navbar.jsx
+    │   ├── SectionDivider.jsx
+    │   ├── ServicesCarousel.jsx
+    │   └── TestimonialsCarousel.jsx
     └── pages/
         ├── HomePage.jsx
         ├── ServicesPage.jsx
