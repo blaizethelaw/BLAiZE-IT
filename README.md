@@ -82,6 +82,10 @@ blaize-it/
     ├── main.jsx
     ├── index.css
     ├── components/
+ codex/locate-usages-of-mainlayout-and-decide-action
+    │   ├── Navbar.jsx
+    │   └── ...
+=======
     │   ├── AboutSection.jsx
     │   ├── BookingButton.jsx
     │   ├── ContactSection.jsx
@@ -90,6 +94,7 @@ blaize-it/
     │   ├── SectionDivider.jsx
     │   ├── ServicesCarousel.jsx
     │   └── TestimonialsCarousel.jsx
+ main
     └── pages/
         ├── AboutPage.jsx
         ├── BookingPage.jsx
@@ -114,6 +119,8 @@ You can adjust the theme colours and drop shadows in **tailwind.config.js**. The
 =======
         ├── TestimonialsPage.jsx
         └── ContactPage.jsx
+ codex/locate-usages-of-mainlayout-and-decide-action
+=======
  codex/update-readme.md-introduction-and-instructions
 ```
 =======
@@ -136,4 +143,5 @@ npm test
 This will execute Jest unit tests for React components.
 
 
+ main
  main
