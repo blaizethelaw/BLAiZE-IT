@@ -625,7 +625,7 @@ export default function App() {
   }, []); // Empty dependency array means this runs once on mount
 
   return (
-    <div className="font-sans antialiased bg-blaize-slate text-white">
+    <div className="font-sans antialiased bg-white text-black dark:bg-blaize-slate dark:text-white">
       {/* Tailwind CSS CDN - IMPORTANT for styling */}
       <script src="https://cdn.tailwindcss.com"></script>
       {/* Custom Tailwind Configuration - Now injected correctly */}

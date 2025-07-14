@@ -1,6 +1,7 @@
 // src/components/Navbar.jsx
 import React from "react";
 import { Link, useLocation } from "react-router-dom";
+import DarkModeToggle from "./DarkModeToggle";
 
 const navItems = [
   { name: "Home", path: "/" },
@@ -44,6 +45,7 @@ export default function Navbar() {
             ))}
           </ul>
         </nav>
+        <DarkModeToggle />
       </div>
     </header>
   );
