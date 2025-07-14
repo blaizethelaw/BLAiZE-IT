@@ -12,7 +12,8 @@ blaize-it/
     ├── index.css
     ├── App.jsx
     ├── components/
-    │   └── MainLayout.jsx
+    │   ├── Navbar.jsx
+    │   └── ...
     └── pages/
         ├── HomePage.jsx
         ├── ServicesPage.jsx
@@ -20,4 +21,3 @@ blaize-it/
         ├── BookingPage.jsx
         ├── TestimonialsPage.jsx
         └── ContactPage.jsx
-        new line
