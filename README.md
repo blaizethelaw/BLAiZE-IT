@@ -1,5 +1,22 @@
 # BLAiZE IT Solutions
 
+ codex/update-readme.md-introduction-and-instructions
+BLAiZE IT Solutions delivers comprehensive managed IT services, cybersecurity
+consulting, cloud migration expertise, and reliable home networking support. Our
+focus is on keeping your technology running smoothly and securely so you can
+concentrate on your business.
+
+## Getting Started
+
+Install dependencies and launch the development server:
+
+```bash
+npm install
+npm run dev
+```
+
+To create an optimized production build, run:
+=======
 BLAiZE IT is a single-page application that showcases the services of **BLAiZE IT Solutions**, an IT consultancy offering support for both businesses and home users. The site is built with [React](https://react.dev/) and styled using [Tailwind CSS](https://tailwindcss.com/). Routing is handled with **React Router** and the interface includes animations via **Framer Motion** and carousels via **Swiper**.
 
 ## Features
@@ -33,17 +50,21 @@ npm run dev
 The site will be available at `http://localhost:5173` by default. Any file changes will trigger hot module reloading.
 
 ### Build for production
+ main
 
 ```bash
 npm run build
 ```
 
+ codex/update-readme.md-introduction-and-instructions
+=======
 The compiled assets will be output to the `dist/` directory. You can preview the build with:
 
 ```bash
 npm run preview
 ```
 
+ main
 ## Folder Structure
 
 ```
@@ -93,6 +114,9 @@ You can adjust the theme colours and drop shadows in **tailwind.config.js**. The
 =======
         ├── TestimonialsPage.jsx
         └── ContactPage.jsx
+ codex/update-readme.md-introduction-and-instructions
+```
+=======
  codex/add-license-file-and-update-readme
         new line
 
@@ -112,3 +136,4 @@ npm test
 This will execute Jest unit tests for React components.
 
 
+ main
