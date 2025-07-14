@@ -21,3 +21,8 @@ blaize-it/
         ├── TestimonialsPage.jsx
         └── ContactPage.jsx
         new line
+
+## License
+
+This project is licensed under the [MIT License](./LICENSE).
+
