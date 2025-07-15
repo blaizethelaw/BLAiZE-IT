@@ -9,6 +9,7 @@ BLAiZE IT Solutions provides managed IT services, cybersecurity consulting, clou
 - Service and testimonial carousels powered by **Swiper**
 - Booking and contact forms via Formspree
 - Progressive Web App setup with a service worker and `manifest.webmanifest`
+- Immersive three.js starfield backdrop rendered with WebGL
 
 ## Getting Started
 
