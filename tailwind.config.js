@@ -1,5 +1,6 @@
 // tailwind.config.js
 module.exports = {
+  darkMode: 'class',
   content: [
     "./index.html",
     "./src/**/*.{js,jsx,ts,tsx}",
@@ -16,6 +17,9 @@ module.exports = {
       },
       dropShadow: {
         glow: '0 0 16px #4D9900cc', // Subtle green glow
+      },
+      animation: {
+        'spin-slow': 'spin 20s linear infinite',
       },
     },
   },

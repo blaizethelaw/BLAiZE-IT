@@ -4,5 +4,5 @@
 
 /* Set the entire site background to slate */
 body {
-  @apply bg-blaize-slate text-white;
+  @apply bg-white text-black dark:bg-blaize-slate dark:text-white;
 }
