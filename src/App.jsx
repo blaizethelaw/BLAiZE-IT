@@ -2,6 +2,8 @@ import React, { useState, useEffect, useRef, Suspense, lazy } from "react";
 // No need for react-router-dom as we'll simulate routing internally for a single file app
 // import { BrowserRouter as Router, Routes, Route, useLocation } from "react-router-dom";
 import { Menu, X, CheckCircle, XCircle, Loader2, ChevronLeft, ChevronRight } from 'lucide-react'; // Icons
+import Starfield from './components/Starfield';
+import HolographicGrid from './components/HolographicGrid';
 
 // --- Utility Components ---
 
@@ -651,6 +653,8 @@ export default function App() {
         `
       }}></script>
 
+      <Starfield />
+      <HolographicGrid />
       <Navbar currentPage={currentPage} setCurrentPage={setCurrentPage} />
 
       <main className="pt-16"> {/* Add padding top to account for fixed navbar */}
