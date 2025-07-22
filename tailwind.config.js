@@ -18,6 +18,9 @@ module.exports = {
       dropShadow: {
         glow: '0 0 16px #4D9900cc', // Subtle green glow
       },
+      fontFamily: {
+        sans: ['Outfit', 'sans-serif'],
+      },
       animation: {
         'spin-slow': 'spin 20s linear infinite',
       },
