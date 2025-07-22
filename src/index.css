@@ -4,23 +4,9 @@
 
 /* Set the entire site background to slate */
 body {
- fr3imn-codex/locate-issue-in-app.jsx
-  @apply bg-white text-black dark:bg-blaize-slate dark:text-white;
-=======
   @apply bg-blaize-slate text-white;
-  cursor: none;
 }
 
-.cursor {
-  transition: all 0.1s ease;
-}
-
-.cursor-follower {
-  transition: all 0.3s ease;
-  filter: blur(5px);
-}
-
- qxqyuq-codex/enhance-website-with-3d-effects
 /* Custom Cursor Styles */
 .blaize-hide-cursor {
   cursor: none;
@@ -48,39 +34,4 @@ body {
   filter: blur(5px);
   transition: transform 0.3s ease;
   transform: translate(-50%, -50%);
-=======
-body {
-  cursor: none;
-}
-
-.custom-cursor {
-  position: fixed;
-  left: 0;
-  top: 0;
-  width: 20px;
-  height: 20px;
-  border: 2px solid theme('colors.blaize-orange');
-  border-radius: 9999px;
-  pointer-events: none;
-  transform: translate(-50%, -50%);
-  mix-blend-mode: difference;
-  z-index: 50;
-  transition: transform 0.1s ease;
-}
-
-.cursor-follower {
-  position: fixed;
-  left: 0;
-  top: 0;
-  width: 40px;
-  height: 40px;
-  border-radius: 9999px;
-  background-color: theme('colors.blaize-orange' / 0.35);
-  pointer-events: none;
-  transform: translate(-50%, -50%);
-  filter: blur(5px);
-  z-index: 40;
-  transition: transform 0.3s ease;
- main
- main
 }
