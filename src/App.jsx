@@ -2,9 +2,28 @@ import React, { useState, useEffect, useRef, Suspense, lazy } from "react";
 // No need for react-router-dom as we'll simulate routing internally for a single file app
 // import { BrowserRouter as Router, Routes, Route, useLocation } from "react-router-dom";
 import { Menu, X, CheckCircle, XCircle, Loader2, ChevronLeft, ChevronRight } from 'lucide-react'; // Icons
+ fr3imn-codex/locate-issue-in-app.jsx
 import GradientBackground from './components/GradientBackground';
 import ScrollToTopButton from './components/ScrollToTopButton';
 
+=======
+import Starfield from './components/Starfield';
+import HolographicGrid from './components/HolographicGrid';
+ yka9y8-codex/enhance-website-with-3d-effects
+ yka9y8-codex/enhance-website-with-3d-effects
+=======
+ ovmw8q-codex/enhance-website-with-3d-effects
+ main
+import ThreeScene from './components/ThreeScene';
+=======
+import ThreeBackground from './components/ThreeBackground';
+ main
+import CustomCursor from './components/CustomCursor';
+ main
+
+import ThreeScene from './components/ThreeScene';
+import CustomCursor from './components/CustomCursor';
+ main
 // --- Utility Components ---
 
 /**
@@ -653,7 +672,25 @@ export default function App() {
         `
       }}></script>
 
+ fr3imn-codex/locate-issue-in-app.jsx
       <GradientBackground />
+=======
+      <CustomCursor />
+      <Starfield />
+      <ThreeScene />
+      <HolographicGrid />
+ yka9y8-codex/enhance-website-with-3d-effects
+      <ThreeScene />
+      <CustomCursor />
+=======
+ qxqyuq-codex/enhance-website-with-3d-effects
+      <ThreeScene />
+      <CustomCursor />
+=======
+      <ThreeBackground />
+ main
+ main
+ main
       <Navbar currentPage={currentPage} setCurrentPage={setCurrentPage} />
 
       <main className="pt-16"> {/* Add padding top to account for fixed navbar */}
