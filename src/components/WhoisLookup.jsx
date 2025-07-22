@@ -1,8 +1,11 @@
 import React, { useState } from 'react';
 import TextField from '@mui/material/TextField';
 import Button from '@mui/material/Button';
+ n88rdt-codex/incorporate-effects-from-provided-code
+=======
 import '@fontsource/outfit/400.css';
 import '@fontsource/outfit/500.css';
+ main
 
 export default function WhoisLookup() {
   const [query, setQuery] = useState('');
