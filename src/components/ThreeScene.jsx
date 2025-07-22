@@ -2,6 +2,27 @@ import React, { useRef, useEffect } from 'react';
 import * as THREE from 'three';
 
 export default function ThreeScene() {
+ ovmw8q-codex/enhance-website-with-3d-effects
+  const containerRef = useRef(null);
+  const requestRef = useRef();
+  const shapesRef = useRef([]);
+
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+
+    // Skip initialization if WebGL is unavailable (e.g. during Jest tests)
+    let testCanvas;
+    try {
+      testCanvas = document.createElement('canvas');
+      if (!testCanvas.getContext('webgl') && !testCanvas.getContext('experimental-webgl')) {
+        return;
+      }
+    } catch {
+      return;
+    }
+
+=======
   const mountRef = useRef(null);
 
   useEffect(() => {
@@ -13,6 +34,7 @@ export default function ThreeScene() {
       return;
     }
     const mount = mountRef.current;
+ main
     const scene = new THREE.Scene();
     const camera = new THREE.PerspectiveCamera(
       75,
@@ -27,6 +49,13 @@ export default function ThreeScene() {
  main
     renderer.setSize(window.innerWidth, window.innerHeight);
     renderer.setPixelRatio(window.devicePixelRatio);
+ ovmw8q-codex/enhance-website-with-3d-effects
+    container.appendChild(renderer.domElement);
+
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+    scene.add(ambientLight);
+
+=======
     mount.appendChild(renderer.domElement);
 
  yka9y8-codex/enhance-website-with-3d-effects
@@ -48,12 +77,17 @@ export default function ThreeScene() {
 =======
     const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
     scene.add(ambientLight);
+ main
     const pointLight = new THREE.PointLight(0xff6b35, 2, 100);
     pointLight.position.set(0, 0, 20);
     scene.add(pointLight);
 
     const particlesGeometry = new THREE.BufferGeometry();
+ ovmw8q-codex/enhance-website-with-3d-effects
+    const particlesCount = 3000;
+=======
     const particlesCount = 5000;
+ main
     const posArray = new Float32Array(particlesCount * 3);
     for (let i = 0; i < particlesCount * 3; i++) {
       posArray[i] = (Math.random() - 0.5) * 100;
@@ -66,6 +100,7 @@ export default function ThreeScene() {
       transparent: true,
       opacity: 0.8,
  yka9y8-codex/enhance-website-with-3d-effects
+ yka9y8-codex/enhance-website-with-3d-effects
       blending: THREE.AdditiveBlending,
     });
     const particleMesh = new THREE.Points(particleGeo, particleMat);
@@ -73,11 +108,29 @@ export default function ThreeScene() {
 
     // Floating shapes
 =======
+ ovmw8q-codex/enhance-website-with-3d-effects
+      blending: THREE.AdditiveBlending,
+ main
+=======
       blending: THREE.AdditiveBlending
+ main
     });
     const particlesMesh = new THREE.Points(particlesGeometry, particlesMaterial);
     scene.add(particlesMesh);
 
+ yka9y8-codex/enhance-website-with-3d-effects
+ main
+=======
+ ovmw8q-codex/enhance-website-with-3d-effects
+    const geometries = [
+      new THREE.BoxGeometry(1, 1, 1),
+      new THREE.OctahedronGeometry(1),
+      new THREE.TetrahedronGeometry(1),
+      new THREE.IcosahedronGeometry(1),
+    ];
+    const shapes = [];
+    for (let i = 0; i < 15; i++) {
+=======
  main
     const shapes = [];
     const geometries = [
@@ -95,6 +148,7 @@ export default function ThreeScene() {
     ];
 
     for (let i = 0; i < 20; i++) {
+ main
       const geometry = geometries[Math.floor(Math.random() * geometries.length)];
       const material = new THREE.MeshPhongMaterial({
  main
@@ -104,11 +158,17 @@ export default function ThreeScene() {
         wireframe: Math.random() > 0.5,
         transparent: true,
  yka9y8-codex/enhance-website-with-3d-effects
+ yka9y8-codex/enhance-website-with-3d-effects
         opacity: 0.8,
       });
       const mesh = new THREE.Mesh(geom, mat);
 =======
+ ovmw8q-codex/enhance-website-with-3d-effects
+        opacity: 0.8,
+ main
+=======
         opacity: 0.8
+ main
       });
       const mesh = new THREE.Mesh(geometry, material);
  main
@@ -122,11 +182,17 @@ export default function ThreeScene() {
         Math.random() * Math.PI,
         Math.random() * Math.PI
       );
+ ovmw8q-codex/enhance-website-with-3d-effects
+      const scale = Math.random() * 2 + 0.5;
+      mesh.scale.set(scale, scale, scale);
+      scene.add(mesh);
+=======
       mesh.scale.set(
         Math.random() * 2 + 0.5,
         Math.random() * 2 + 0.5,
         Math.random() * 2 + 0.5
       );
+ main
       shapes.push({
         mesh,
  yka9y8-codex/enhance-website-with-3d-effects
@@ -168,6 +234,29 @@ export default function ThreeScene() {
         rotationSpeed: {
           x: Math.random() * 0.01 - 0.005,
           y: Math.random() * 0.01 - 0.005,
+ ovmw8q-codex/enhance-website-with-3d-effects
+          z: Math.random() * 0.01 - 0.005,
+        },
+      });
+    }
+    shapesRef.current = shapes;
+
+    camera.position.z = 30;
+
+    let mouseX = 0;
+    let mouseY = 0;
+    const handleMouseMove = (event) => {
+      mouseX = (event.clientX / window.innerWidth) * 2 - 1;
+      mouseY = -(event.clientY / window.innerHeight) * 2 + 1;
+    };
+    window.addEventListener('mousemove', handleMouseMove);
+
+    const animate = () => {
+      requestRef.current = requestAnimationFrame(animate);
+      particlesMesh.rotation.y += 0.0005;
+      particlesMesh.rotation.x += 0.0002;
+      shapesRef.current.forEach((shape) => {
+=======
           z: Math.random() * 0.01 - 0.005
         }
       });
@@ -188,6 +277,7 @@ export default function ThreeScene() {
       particlesMesh.rotation.y += 0.0005;
       particlesMesh.rotation.x += 0.0002;
       shapes.forEach((shape) => {
+ main
         shape.mesh.rotation.x += shape.rotationSpeed.x;
         shape.mesh.rotation.y += shape.rotationSpeed.y;
         shape.mesh.rotation.z += shape.rotationSpeed.z;
@@ -220,6 +310,17 @@ export default function ThreeScene() {
     window.addEventListener('resize', handleResize);
 
     return () => {
+ ovmw8q-codex/enhance-website-with-3d-effects
+      window.removeEventListener('resize', handleResize);
+      window.removeEventListener('mousemove', handleMouseMove);
+      cancelAnimationFrame(requestRef.current);
+      renderer.dispose();
+      container.removeChild(renderer.domElement);
+    };
+  }, []);
+
+  return <div ref={containerRef} className="fixed inset-0 -z-20" />;
+=======
       cancelAnimationFrame(frameId);
       window.removeEventListener('resize', handleResize);
       window.removeEventListener('mousemove', handleMouseMove);

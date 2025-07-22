@@ -5,11 +5,16 @@ import { Menu, X, CheckCircle, XCircle, Loader2, ChevronLeft, ChevronRight } fro
 import Starfield from './components/Starfield';
 import HolographicGrid from './components/HolographicGrid';
  yka9y8-codex/enhance-website-with-3d-effects
+ yka9y8-codex/enhance-website-with-3d-effects
+=======
+ ovmw8q-codex/enhance-website-with-3d-effects
+ main
 import ThreeScene from './components/ThreeScene';
 =======
 import ThreeBackground from './components/ThreeBackground';
  main
 import CustomCursor from './components/CustomCursor';
+ main
 
 import ThreeScene from './components/ThreeScene';
 import CustomCursor from './components/CustomCursor';
@@ -663,6 +668,7 @@ export default function App() {
 
       <CustomCursor />
       <Starfield />
+      <ThreeScene />
       <HolographicGrid />
  yka9y8-codex/enhance-website-with-3d-effects
       <ThreeScene />
