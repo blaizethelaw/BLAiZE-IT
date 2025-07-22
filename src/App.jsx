@@ -5,6 +5,8 @@ import { Menu, X, CheckCircle, XCircle, Loader2, ChevronLeft, ChevronRight } fro
 import Starfield from './components/Starfield';
 import HolographicGrid from './components/HolographicGrid';
 
+import ThreeScene from './components/ThreeScene';
+import CustomCursor from './components/CustomCursor';
 // --- Utility Components ---
 
 /**
@@ -655,6 +657,8 @@ export default function App() {
 
       <Starfield />
       <HolographicGrid />
+      <ThreeScene />
+      <CustomCursor />
       <Navbar currentPage={currentPage} setCurrentPage={setCurrentPage} />
 
       <main className="pt-16"> {/* Add padding top to account for fixed navbar */}

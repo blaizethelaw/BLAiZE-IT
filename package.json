@@ -17,6 +17,7 @@
     "react-router-dom": "^7.6.2",
     "swiper": "^11.2.8",
     "tailwindcss": "^3.4.3",
+    "three": "^0.164.1",
     "vite": "^5.2.10"
   },
   "devDependencies": {
