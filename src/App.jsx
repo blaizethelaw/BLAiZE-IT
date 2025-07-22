@@ -4,6 +4,8 @@ import React, { useState, useEffect, useRef, Suspense, lazy } from "react";
 import { Menu, X, CheckCircle, XCircle, Loader2, ChevronLeft, ChevronRight } from 'lucide-react'; // Icons
 import Starfield from './components/Starfield';
 import HolographicGrid from './components/HolographicGrid';
+import ThreeBackground from './components/ThreeBackground';
+import CustomCursor from './components/CustomCursor';
 
 // --- Utility Components ---
 
@@ -653,8 +655,10 @@ export default function App() {
         `
       }}></script>
 
+      <CustomCursor />
       <Starfield />
       <HolographicGrid />
+      <ThreeBackground />
       <Navbar currentPage={currentPage} setCurrentPage={setCurrentPage} />
 
       <main className="pt-16"> {/* Add padding top to account for fixed navbar */}
