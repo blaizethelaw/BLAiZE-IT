@@ -4,8 +4,12 @@ import React, { useState, useEffect, useRef, Suspense, lazy } from "react";
 import { Menu, X, CheckCircle, XCircle, Loader2, ChevronLeft, ChevronRight } from 'lucide-react'; // Icons
 import Starfield from './components/Starfield';
 import HolographicGrid from './components/HolographicGrid';
+ ovmw8q-codex/enhance-website-with-3d-effects
+import ThreeScene from './components/ThreeScene';
+=======
 import ThreeBackground from './components/ThreeBackground';
 import CustomCursor from './components/CustomCursor';
+ main
 
 import ThreeScene from './components/ThreeScene';
 import CustomCursor from './components/CustomCursor';
@@ -659,6 +663,7 @@ export default function App() {
 
       <CustomCursor />
       <Starfield />
+      <ThreeScene />
       <HolographicGrid />
  qxqyuq-codex/enhance-website-with-3d-effects
       <ThreeScene />
