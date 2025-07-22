@@ -4,9 +4,9 @@ import React, { useState, useEffect, useRef, Suspense, lazy } from "react";
 import { Menu, X, CheckCircle, XCircle, Loader2, ChevronLeft, ChevronRight } from 'lucide-react'; // Icons
 import Starfield from './components/Starfield';
 import HolographicGrid from './components/HolographicGrid';
-
 import ThreeScene from './components/ThreeScene';
 import CustomCursor from './components/CustomCursor';
+import WhoisLookup from './components/WhoisLookup';
 // --- Utility Components ---
 
 /**
@@ -683,6 +683,9 @@ export default function App() {
         </FadeInWhenVisible>
         <FadeInWhenVisible delay={200}>
           <TestimonialsCarousel />
+        </FadeInWhenVisible>
+        <FadeInWhenVisible delay={300}>
+          <WhoisLookup />
         </FadeInWhenVisible>
         <FadeInWhenVisible delay={100}>
           <SectionDivider flip />

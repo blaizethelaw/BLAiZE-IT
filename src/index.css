@@ -1,10 +1,14 @@
+@import '@fontsource/outfit/400.css';
+@import '@fontsource/outfit/500.css';
+@import '@fontsource/outfit/700.css';
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 /* Set the entire site background to slate */
 body {
-  @apply bg-blaize-slate text-white;
+  @apply bg-blaize-slate text-white font-sans;
 }
 
 /* Custom Cursor Styles */
