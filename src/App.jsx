@@ -2,6 +2,11 @@ import React, { useState, useEffect, useRef, Suspense, lazy } from "react";
 // No need for react-router-dom as we'll simulate routing internally for a single file app
 // import { BrowserRouter as Router, Routes, Route, useLocation } from "react-router-dom";
 import { Menu, X, CheckCircle, XCircle, Loader2, ChevronLeft, ChevronRight } from 'lucide-react'; // Icons
+ fr3imn-codex/locate-issue-in-app.jsx
+import GradientBackground from './components/GradientBackground';
+import ScrollToTopButton from './components/ScrollToTopButton';
+
+=======
 import Starfield from './components/Starfield';
 import HolographicGrid from './components/HolographicGrid';
  yka9y8-codex/enhance-website-with-3d-effects
@@ -18,6 +23,7 @@ import CustomCursor from './components/CustomCursor';
 
 import ThreeScene from './components/ThreeScene';
 import CustomCursor from './components/CustomCursor';
+ main
 // --- Utility Components ---
 
 /**
@@ -640,7 +646,7 @@ export default function App() {
   }, []); // Empty dependency array means this runs once on mount
 
   return (
-    <div className="font-sans antialiased bg-blaize-slate text-white">
+    <div className="font-sans antialiased bg-white text-black dark:bg-blaize-slate dark:text-white">
       {/* Tailwind CSS CDN - IMPORTANT for styling */}
       <script src="https://cdn.tailwindcss.com"></script>
       {/* Custom Tailwind Configuration - Now injected correctly */}
@@ -666,6 +672,9 @@ export default function App() {
         `
       }}></script>
 
+ fr3imn-codex/locate-issue-in-app.jsx
+      <GradientBackground />
+=======
       <CustomCursor />
       <Starfield />
       <ThreeScene />
@@ -679,6 +688,7 @@ export default function App() {
       <CustomCursor />
 =======
       <ThreeBackground />
+ main
  main
  main
       <Navbar currentPage={currentPage} setCurrentPage={setCurrentPage} />
@@ -713,6 +723,7 @@ export default function App() {
           <ContactSection />
         </FadeInWhenVisible>
       </main>
+      <ScrollToTopButton />
     </div>
   );
 }

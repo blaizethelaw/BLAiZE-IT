@@ -17,6 +17,8 @@ global.IntersectionObserver = MockIntersectionObserver;
 
 // JSDOM doesn't implement scrollIntoView
 window.HTMLElement.prototype.scrollIntoView = function() {};
+ fr3imn-codex/locate-issue-in-app.jsx
+=======
 
 // Mock canvas getContext for Three.js and other canvas usage
 HTMLCanvasElement.prototype.getContext = () => {
@@ -40,3 +42,4 @@ HTMLCanvasElement.prototype.getContext = () => {
     stroke: jest.fn(),
   };
 };
+ main

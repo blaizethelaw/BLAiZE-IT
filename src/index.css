@@ -4,6 +4,9 @@
 
 /* Set the entire site background to slate */
 body {
+ fr3imn-codex/locate-issue-in-app.jsx
+  @apply bg-white text-black dark:bg-blaize-slate dark:text-white;
+=======
   @apply bg-blaize-slate text-white;
   cursor: none;
 }
@@ -78,5 +81,6 @@ body {
   filter: blur(5px);
   z-index: 40;
   transition: transform 0.3s ease;
+ main
  main
 }
