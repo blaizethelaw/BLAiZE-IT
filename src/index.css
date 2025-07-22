@@ -11,31 +11,3 @@ body {
   @apply bg-blaize-slate text-white font-sans;
 }
 
-/* Custom Cursor Styles */
-.blaize-hide-cursor {
-  cursor: none;
-}
-.blaize-cursor {
-  width: 20px;
-  height: 20px;
-  border: 2px solid #ff6b35;
-  border-radius: 50%;
-  position: fixed;
-  pointer-events: none;
-  mix-blend-mode: difference;
-  z-index: 50;
-  transition: transform 0.1s ease;
-  transform: translate(-50%, -50%);
-}
-.blaize-cursor-follower {
-  width: 40px;
-  height: 40px;
-  background: rgba(255, 107, 53, 0.3);
-  border-radius: 50%;
-  position: fixed;
-  pointer-events: none;
-  z-index: 49;
-  filter: blur(5px);
-  transition: transform 0.3s ease;
-  transform: translate(-50%, -50%);
-}
