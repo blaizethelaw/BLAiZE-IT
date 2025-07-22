@@ -1,8 +1,6 @@
 import React, { useState } from 'react';
 import TextField from '@mui/material/TextField';
 import Button from '@mui/material/Button';
-import '@fontsource/outfit/400.css';
-import '@fontsource/outfit/500.css';
 
 export default function WhoisLookup() {
   const [query, setQuery] = useState('');
