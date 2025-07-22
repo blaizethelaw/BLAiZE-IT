@@ -2,6 +2,7 @@ import React, { useRef, useEffect } from 'react';
 import * as THREE from 'three';
 
 export default function ThreeScene() {
+ ovmw8q-codex/enhance-website-with-3d-effects
   const containerRef = useRef(null);
   const requestRef = useRef();
   const shapesRef = useRef([]);
@@ -21,6 +22,15 @@ export default function ThreeScene() {
       return;
     }
 
+=======
+  const mountRef = useRef(null);
+
+  useEffect(() => {
+    if (typeof window === 'undefined' || !('WebGLRenderingContext' in window)) {
+      return;
+    }
+    const mount = mountRef.current;
+ main
     const scene = new THREE.Scene();
     const camera = new THREE.PerspectiveCamera(
       75,
@@ -31,17 +41,28 @@ export default function ThreeScene() {
     const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
     renderer.setSize(window.innerWidth, window.innerHeight);
     renderer.setPixelRatio(window.devicePixelRatio);
+ ovmw8q-codex/enhance-website-with-3d-effects
     container.appendChild(renderer.domElement);
 
     const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
     scene.add(ambientLight);
 
+=======
+    mount.appendChild(renderer.domElement);
+
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+    scene.add(ambientLight);
+ main
     const pointLight = new THREE.PointLight(0xff6b35, 2, 100);
     pointLight.position.set(0, 0, 20);
     scene.add(pointLight);
 
     const particlesGeometry = new THREE.BufferGeometry();
+ ovmw8q-codex/enhance-website-with-3d-effects
     const particlesCount = 3000;
+=======
+    const particlesCount = 5000;
+ main
     const posArray = new Float32Array(particlesCount * 3);
     for (let i = 0; i < particlesCount * 3; i++) {
       posArray[i] = (Math.random() - 0.5) * 100;
@@ -52,11 +73,16 @@ export default function ThreeScene() {
       color: 0xff6b35,
       transparent: true,
       opacity: 0.8,
+ ovmw8q-codex/enhance-website-with-3d-effects
       blending: THREE.AdditiveBlending,
+=======
+      blending: THREE.AdditiveBlending
+ main
     });
     const particlesMesh = new THREE.Points(particlesGeometry, particlesMaterial);
     scene.add(particlesMesh);
 
+ ovmw8q-codex/enhance-website-with-3d-effects
     const geometries = [
       new THREE.BoxGeometry(1, 1, 1),
       new THREE.OctahedronGeometry(1),
@@ -65,6 +91,17 @@ export default function ThreeScene() {
     ];
     const shapes = [];
     for (let i = 0; i < 15; i++) {
+=======
+    const shapes = [];
+    const geometries = [
+      new THREE.BoxGeometry(1, 1, 1),
+      new THREE.OctahedronGeometry(1, 0),
+      new THREE.TetrahedronGeometry(1, 0),
+      new THREE.IcosahedronGeometry(1, 0)
+    ];
+
+    for (let i = 0; i < 20; i++) {
+ main
       const geometry = geometries[Math.floor(Math.random() * geometries.length)];
       const material = new THREE.MeshPhongMaterial({
         color: 0xff6b35,
@@ -72,7 +109,11 @@ export default function ThreeScene() {
         emissiveIntensity: 0.2,
         wireframe: Math.random() > 0.5,
         transparent: true,
+ ovmw8q-codex/enhance-website-with-3d-effects
         opacity: 0.8,
+=======
+        opacity: 0.8
+ main
       });
       const mesh = new THREE.Mesh(geometry, material);
       mesh.position.set(
@@ -85,14 +126,23 @@ export default function ThreeScene() {
         Math.random() * Math.PI,
         Math.random() * Math.PI
       );
+ ovmw8q-codex/enhance-website-with-3d-effects
       const scale = Math.random() * 2 + 0.5;
       mesh.scale.set(scale, scale, scale);
       scene.add(mesh);
+=======
+      mesh.scale.set(
+        Math.random() * 2 + 0.5,
+        Math.random() * 2 + 0.5,
+        Math.random() * 2 + 0.5
+      );
+ main
       shapes.push({
         mesh,
         rotationSpeed: {
           x: Math.random() * 0.01 - 0.005,
           y: Math.random() * 0.01 - 0.005,
+ ovmw8q-codex/enhance-website-with-3d-effects
           z: Math.random() * 0.01 - 0.005,
         },
       });
@@ -114,6 +164,28 @@ export default function ThreeScene() {
       particlesMesh.rotation.y += 0.0005;
       particlesMesh.rotation.x += 0.0002;
       shapesRef.current.forEach((shape) => {
+=======
+          z: Math.random() * 0.01 - 0.005
+        }
+      });
+      scene.add(mesh);
+    }
+    camera.position.z = 30;
+    let mouseX = 0;
+    let mouseY = 0;
+    const handleMouseMove = (e) => {
+      mouseX = (e.clientX / window.innerWidth) * 2 - 1;
+      mouseY = -(e.clientY / window.innerHeight) * 2 + 1;
+    };
+    window.addEventListener('mousemove', handleMouseMove);
+
+    let frameId;
+    const animate = () => {
+      frameId = requestAnimationFrame(animate);
+      particlesMesh.rotation.y += 0.0005;
+      particlesMesh.rotation.x += 0.0002;
+      shapes.forEach((shape) => {
+ main
         shape.mesh.rotation.x += shape.rotationSpeed.x;
         shape.mesh.rotation.y += shape.rotationSpeed.y;
         shape.mesh.rotation.z += shape.rotationSpeed.z;
@@ -135,6 +207,7 @@ export default function ThreeScene() {
     window.addEventListener('resize', handleResize);
 
     return () => {
+ ovmw8q-codex/enhance-website-with-3d-effects
       window.removeEventListener('resize', handleResize);
       window.removeEventListener('mousemove', handleMouseMove);
       cancelAnimationFrame(requestRef.current);
@@ -144,4 +217,14 @@ export default function ThreeScene() {
   }, []);
 
   return <div ref={containerRef} className="fixed inset-0 -z-20" />;
+=======
+      cancelAnimationFrame(frameId);
+      window.removeEventListener('resize', handleResize);
+      window.removeEventListener('mousemove', handleMouseMove);
+      mount.removeChild(renderer.domElement);
+    };
+  }, []);
+
+  return <div ref={mountRef} className="fixed inset-0 -z-30" />;
+ main
 }
