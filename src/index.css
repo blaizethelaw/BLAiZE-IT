@@ -5,6 +5,16 @@
 /* Set the entire site background to slate */
 body {
   @apply bg-blaize-slate text-white;
+  cursor: none;
+}
+
+.cursor {
+  transition: all 0.1s ease;
+}
+
+.cursor-follower {
+  transition: all 0.3s ease;
+  filter: blur(5px);
 }
 
  qxqyuq-codex/enhance-website-with-3d-effects

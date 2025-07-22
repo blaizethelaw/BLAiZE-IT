@@ -4,10 +4,15 @@ import React, { useState, useEffect, useRef, Suspense, lazy } from "react";
 import { Menu, X, CheckCircle, XCircle, Loader2, ChevronLeft, ChevronRight } from 'lucide-react'; // Icons
 import Starfield from './components/Starfield';
 import HolographicGrid from './components/HolographicGrid';
+ yka9y8-codex/enhance-website-with-3d-effects
+ yka9y8-codex/enhance-website-with-3d-effects
+=======
  ovmw8q-codex/enhance-website-with-3d-effects
+ main
 import ThreeScene from './components/ThreeScene';
 =======
 import ThreeBackground from './components/ThreeBackground';
+ main
 import CustomCursor from './components/CustomCursor';
  main
 
@@ -665,11 +670,16 @@ export default function App() {
       <Starfield />
       <ThreeScene />
       <HolographicGrid />
+ yka9y8-codex/enhance-website-with-3d-effects
+      <ThreeScene />
+      <CustomCursor />
+=======
  qxqyuq-codex/enhance-website-with-3d-effects
       <ThreeScene />
       <CustomCursor />
 =======
       <ThreeBackground />
+ main
  main
       <Navbar currentPage={currentPage} setCurrentPage={setCurrentPage} />
 
