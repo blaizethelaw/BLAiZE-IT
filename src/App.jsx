@@ -6,6 +6,7 @@ import Starfield from './components/Starfield';
 import HolographicGrid from './components/HolographicGrid';
 import ThreeScene from './components/ThreeScene';
 import WhoisLookup from './components/WhoisLookup';
+import InteractiveNebula from './components/InteractiveNebula';
 // --- Utility Components ---
 
 /**
@@ -657,9 +658,7 @@ export default function App() {
       <Starfield />
       <HolographicGrid />
       <ThreeScene />
-      <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', zIndex: -1, pointerEvents: 'none' }}>
-        <iframe src="/nebula.html" title="Interactive Nebula" style={{ width: '100%', height: '100%', border: 'none' }}></iframe>
-      </div>
+      <InteractiveNebula />
       <Navbar currentPage={currentPage} setCurrentPage={setCurrentPage} />
 
       <main className="pt-16"> {/* Add padding top to account for fixed navbar */}
