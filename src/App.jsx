@@ -5,7 +5,7 @@ import { Menu, X, CheckCircle, XCircle, Loader2, ChevronLeft, ChevronRight } fro
 import Starfield from './components/Starfield';
 import HolographicGrid from './components/HolographicGrid';
 import ThreeScene from './components/ThreeScene';
-import CustomCursor from './components/CustomCursor';
+import InteractiveNebula from './components/InteractiveNebula';
 import WhoisLookup from './components/WhoisLookup';
 // --- Utility Components ---
 
@@ -658,7 +658,7 @@ export default function App() {
       <Starfield />
       <HolographicGrid />
       <ThreeScene />
-      <CustomCursor />
+      <InteractiveNebula />
       <Navbar currentPage={currentPage} setCurrentPage={setCurrentPage} />
 
       <main className="pt-16"> {/* Add padding top to account for fixed navbar */}

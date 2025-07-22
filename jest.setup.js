@@ -40,3 +40,11 @@ HTMLCanvasElement.prototype.getContext = () => {
     stroke: jest.fn(),
   };
 };
+
+// Mock ResizeObserver for libraries that rely on it
+class MockResizeObserver {
+  observe() {}
+  unobserve() {}
+  disconnect() {}
+}
+global.ResizeObserver = MockResizeObserver;
