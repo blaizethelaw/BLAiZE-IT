@@ -654,9 +654,6 @@ export default function App() {
         `
       }}></script>
 
-      <Starfield />
-      <HolographicGrid />
-      <ThreeScene />
       <Navbar currentPage={currentPage} setCurrentPage={setCurrentPage} />
 
       <main className="pt-16"> {/* Add padding top to account for fixed navbar */}
