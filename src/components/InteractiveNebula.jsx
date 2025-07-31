@@ -8,11 +8,15 @@ const vertexShader = `
   uniform float uPixelRatio;
   uniform float uSize;
   attribute float aScale;
+  attribute float aSpeed;
   varying vec3 vColor;
+  varying float vAlpha;
+
   vec3 mod289(vec3 x) { return x - floor(x * (1.0 / 289.0)) * 289.0; }
   vec4 mod289(vec4 x) { return x - floor(x * (1.0 / 289.0)) * 289.0; }
   vec4 permute(vec4 x) { return mod289(((x*34.0)+1.0)*x); }
   vec4 taylorInvSqrt(vec4 r) { return 1.79284291400159 - 0.85373472095314 * r; }
+
   float snoise(vec3 v) {
     const vec2 C = vec2(1.0/6.0, 1.0/3.0);
     const vec4 D = vec4(0.0, 0.5, 1.0, 2.0);
@@ -58,31 +62,77 @@ const vertexShader = `
     m = m * m;
     return 42.0 * dot(m * m, vec4(dot(p0, x0), dot(p1, x1), dot(p2, x2), dot(p3, x3)));
   }
+
   void main() {
     vec3 pos = position;
-    float noise = snoise(vec3(pos.x * 0.5 + uTime * 0.1, pos.y * 0.5 + uTime * 0.1, uTime * 0.1));
-    pos.z += noise * 0.2;
+
+    // Multi-layered noise for organic movement
+    float time = uTime * aSpeed;
+    float noise1 = snoise(vec3(pos.x * 0.3, pos.y * 0.3, time * 0.5));
+    float noise2 = snoise(vec3(pos.x * 0.7 + 100.0, pos.y * 0.7, time * 0.3)) * 0.5;
+    float noise3 = snoise(vec3(pos.x * 1.4 + 200.0, pos.y * 1.4, time * 0.7)) * 0.25;
+    float totalNoise = noise1 + noise2 + noise3;
+
+    // Breathing effect
+    float breathe = sin(time * 2.0) * 0.1 + 1.0;
+
+    // Apply noise deformation
+    pos.xy += vec2(
+      snoise(vec3(pos.x * 0.5, pos.y * 0.5, time)) * 0.3,
+      snoise(vec3(pos.x * 0.5 + 50.0, pos.y * 0.5, time)) * 0.3
+    ) * breathe;
+
+    // Mouse interaction
     float dist = distance(pos.xy, uMouse);
-    float pullFactor = 1.0 - smoothstep(0.0, 0.5, dist);
-    pos.xy = mix(pos.xy, uMouse, pullFactor * 0.1);
-    pos.z += pullFactor * 0.5;
+    float influence = 1.0 - smoothstep(0.0, 2.0, dist);
+    vec2 direction = normalize(pos.xy - uMouse);
+    pos.xy += direction * influence * 0.5 * (0.5 + totalNoise * 0.5);
+
+    // Z displacement for depth
+    pos.z += totalNoise * 0.4 * breathe;
+
     vec4 modelPosition = modelMatrix * vec4(pos, 1.0);
     vec4 viewPosition = viewMatrix * modelPosition;
     vec4 projectedPosition = projectionMatrix * viewPosition;
     gl_Position = projectedPosition;
-    gl_PointSize = uSize * aScale * uPixelRatio;
+
+    // Dynamic point size
+    float sizeModifier = 1.0 + totalNoise * 0.3 + influence * 0.5;
+    gl_PointSize = uSize * aScale * uPixelRatio * sizeModifier * breathe;
     gl_PointSize *= (1.0 / -viewPosition.z);
-    vColor = vec3(0.5 + pullFactor * 0.5, 0.5 - pullFactor * 0.2, 0.8);
-    vColor = mix(vColor, vec3(1.0, 1.0, 1.0), noise * 0.5);
+
+    // Color variation
+    vec3 baseColor = vec3(0.3, 0.6, 1.0); // Cyan-blue base
+    vec3 highlightColor = vec3(0.5, 0.8, 1.0); // Lighter cyan
+    vec3 accentColor = vec3(1.0, 0.6, 0.8); // Pink accent
+
+    float colorMix = totalNoise * 0.5 + 0.5;
+    vColor = mix(baseColor, highlightColor, colorMix);
+    vColor = mix(vColor, accentColor, influence * 0.3);
+
+    // Alpha based on various factors
+    vAlpha = 0.15 + influence * 0.2 + (totalNoise * 0.5 + 0.5) * 0.1;
+    vAlpha *= breathe;
   }
 `;
 
 const fragmentShader = `
   varying vec3 vColor;
+  varying float vAlpha;
+
   void main() {
-    float strength = distance(gl_PointCoord, vec2(0.5));
-    strength = 1.0 - step(0.5, strength);
-    gl_FragColor = vec4(vColor, strength * 0.5);
+    // Soft circular particles
+    vec2 center = gl_PointCoord - vec2(0.5);
+    float dist = length(center);
+    float strength = 1.0 - smoothstep(0.0, 0.5, dist);
+
+    // Glow effect
+    float glow = exp(-dist * 4.0);
+
+    vec3 finalColor = vColor + vec3(glow * 0.2);
+    float finalAlpha = vAlpha * strength * (0.6 + glow * 0.4);
+
+    gl_FragColor = vec4(finalColor, finalAlpha);
   }
 `;
 
@@ -92,37 +142,55 @@ function Nebula() {
   const uniforms = useMemo(() => ({
     uTime: { value: 0 },
     uMouse: { value: new THREE.Vector2(0, 0) },
-    uSize: { value: 60.0 },
+    uSize: { value: 30.0 },
     uPixelRatio: { value: Math.min(window.devicePixelRatio, 2) }
   }), []);
+
   const particles = useMemo(() => {
-    const count = 5000;
+    const count = 3000;
     const positions = new Float32Array(count * 3);
     const scales = new Float32Array(count);
+    const speeds = new Float32Array(count);
+
+    // Create circular distribution with more particles in center
     for (let i = 0; i < count; i++) {
-      positions[i * 3] = (Math.random() - 0.5) * 10;
-      positions[i * 3 + 1] = (Math.random() - 0.5) * 10;
+      const angle = Math.random() * Math.PI * 2;
+      const radius = Math.sqrt(Math.random()) * 5; // Square root for even distribution
+
+      positions[i * 3] = Math.cos(angle) * radius;
+      positions[i * 3 + 1] = Math.sin(angle) * radius;
       positions[i * 3 + 2] = (Math.random() - 0.5) * 2;
-      scales[i] = Math.random() * 0.5 + 0.5;
+
+      scales[i] = Math.random() * 0.8 + 0.2;
+      speeds[i] = Math.random() * 0.5 + 0.5;
     }
+
     const geo = new THREE.BufferGeometry();
     geo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
     geo.setAttribute('aScale', new THREE.BufferAttribute(scales, 1));
+    geo.setAttribute('aSpeed', new THREE.BufferAttribute(speeds, 1));
     return geo;
   }, []);
+
   useFrame((state, delta) => {
-    uniforms.uTime.value += delta * 0.2;
+    uniforms.uTime.value += delta * 0.15;
+
     const targetMouse = new THREE.Vector2(
       (mouse.current[0] / size.width) * 2 - 1,
       -(mouse.current[1] / size.height) * 2 + 1
     ).multiplyScalar(viewport.width / 2);
-    uniforms.uMouse.value.lerp(targetMouse, 0.05);
+
+    uniforms.uMouse.value.lerp(targetMouse, 0.1);
   });
+
   useEffect(() => {
-    const handleMouseMove = (e) => { mouse.current = [e.clientX, e.clientY]; };
+    const handleMouseMove = (e) => {
+      mouse.current = [e.clientX, e.clientY];
+    };
     window.addEventListener('mousemove', handleMouseMove);
     return () => window.removeEventListener('mousemove', handleMouseMove);
   }, []);
+
   return (
     <points geometry={particles}>
       <shaderMaterial
@@ -139,8 +207,22 @@ function Nebula() {
 
 export default function InteractiveNebula() {
   return (
-    <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', zIndex: 0, pointerEvents: 'none' }}>
-      <Canvas camera={{ position: [0, 0, 2], fov: 75 }} onCreated={({ gl }) => { gl.setClearColor('#000000', 1); }}>
+    <div style={{
+      position: 'absolute',
+      top: 0,
+      left: 0,
+      width: '100%',
+      height: '100%',
+      zIndex: 0,
+      pointerEvents: 'none',
+      background: 'radial-gradient(circle at center, rgba(77, 153, 0, 0.05) 0%, transparent 70%)'
+    }}>
+      <Canvas
+        camera={{ position: [0, 0, 3], fov: 75 }}
+        onCreated={({ gl }) => {
+          gl.setClearColor('#000000', 0);
+        }}
+      >
         <Suspense fallback={null}>
           <Nebula />
         </Suspense>
