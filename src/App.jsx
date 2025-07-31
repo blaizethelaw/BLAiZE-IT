@@ -218,9 +218,7 @@ function Navbar({ currentPage, setCurrentPage }) {
 
 function HeroSection() {
   return (
-    <section id="home" className="relative h-screen flex items-center justify-center bg-cover bg-center"
-      style={{ backgroundImage: "url('https://placehold.co/1920x1080/1a1a1a/ffffff?text=Your+Hero+Image')" }}>
-      <div className="absolute inset-0 bg-black/60"></div> {/* Overlay */}
+    <section id="home" className="relative h-screen flex items-center justify-center">
       <div className="relative z-10 text-center text-white p-4 max-w-4xl mx-auto">
         <h1 className="text-4xl md:text-6xl font-extrabold mb-4 leading-tight drop-shadow-lg">
           <span className="bg-gradient-to-r from-blaize-green via-blaize-yellow to-blaize-orange text-transparent bg-clip-text">
