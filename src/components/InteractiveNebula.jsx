@@ -139,7 +139,7 @@ function Nebula() {
 
 export default function InteractiveNebula() {
   return (
-    <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', zIndex: -1, pointerEvents: 'none' }}>
+    <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', zIndex: 0, pointerEvents: 'none' }}>
       <Canvas camera={{ position: [0, 0, 2], fov: 75 }} onCreated={({ gl }) => { gl.setClearColor('#000000', 1); }}>
         <Suspense fallback={null}>
           <Nebula />
