@@ -219,8 +219,7 @@ function Navbar({ currentPage, setCurrentPage }) {
 function HeroSection() {
   return (
     <section id="home" className="relative h-screen flex items-center justify-center">
-      <InteractiveNebula />
-      <div className="relative z-10 text-center text-white p-4 max-w-4xl mx-auto" style={{ position: 'absolute', zIndex: 10 }}>
+      <div className="relative z-10 text-center text-white p-4 max-w-4xl mx-auto">
         <h1 className="text-4xl md:text-6xl font-extrabold mb-4 leading-tight drop-shadow-lg">
           <span className="bg-gradient-to-r from-blaize-green via-blaize-yellow to-blaize-orange text-transparent bg-clip-text">
             BLAiZE IT
@@ -628,7 +627,7 @@ export default function App() {
   }, []); // Empty dependency array means this runs once on mount
 
   return (
-    <div className="font-sans antialiased text-white">
+    <div className="font-sans antialiased bg-blaize-slate text-white">
       {/* Tailwind CSS CDN - IMPORTANT for styling */}
       <script src="https://cdn.tailwindcss.com"></script>
       {/* Custom Tailwind Configuration - Now injected correctly */}
@@ -654,6 +653,7 @@ export default function App() {
         `
       }}></script>
 
+      <InteractiveNebula />
       <Navbar currentPage={currentPage} setCurrentPage={setCurrentPage} />
 
       <main className="pt-16"> {/* Add padding top to account for fixed navbar */}
