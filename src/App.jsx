@@ -219,7 +219,7 @@ function Navbar({ currentPage, setCurrentPage }) {
 function HeroSection() {
   return (
     <section id="home" className="relative h-screen flex items-center justify-center">
-      <div className="relative z-10 text-center text-white p-4 max-w-4xl mx-auto">
+      <div className="relative z-10 text-center text-white p-4 max-w-4xl mx-auto" style={{ position: 'relative', zIndex: 10 }}>
         <h1 className="text-4xl md:text-6xl font-extrabold mb-4 leading-tight drop-shadow-lg">
           <span className="bg-gradient-to-r from-blaize-green via-blaize-yellow to-blaize-orange text-transparent bg-clip-text">
             BLAiZE IT
