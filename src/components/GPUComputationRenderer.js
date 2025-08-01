@@ -118,13 +118,13 @@ var GPUComputationRenderer = function (sizeX, sizeY, renderer) {
 
 	this.compute = function () {
 		var currentTextureIndex = this.currentTextureIndex;
-		var nextTextureIndex = this.currentTextureIndex === 0 ? 1 : 0;
+		var nextTextureIndex = currentTextureIndex === 0 ? 1 : 0;
 
-		for (var v = 0, il = this.variables.length; v < il; v++) {
+		for (var v = 0; v < this.variables.length; v++) {
 			var variable = this.variables[v];
 			var uniforms = variable.material.uniforms;
 
-			for (var d = 0, dl = this.variables.length; d < dl; d++) {
+			for (var d = 0; d < this.variables.length; d++) {
 				var depVar = this.variables[d];
 				if (uniforms.hasOwnProperty(depVar.name)) {
 					uniforms[depVar.name].value = depVar.renderTargets[currentTextureIndex].texture;
@@ -140,10 +140,8 @@ var GPUComputationRenderer = function (sizeX, sizeY, renderer) {
 	this.createRenderTarget = function (sizeXTexture, sizeYTexture, wrapS, wrapT, minFilter, magFilter) {
 		sizeXTexture = sizeXTexture || sizeX;
 		sizeYTexture = sizeYTexture || sizeY;
-
 		wrapS = wrapS || ClampToEdgeWrapping;
 		wrapT = wrapT || ClampToEdgeWrapping;
-
 		minFilter = minFilter || NearestFilter;
 		magFilter = magFilter || NearestFilter;
 
