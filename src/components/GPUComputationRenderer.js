@@ -38,7 +38,11 @@ var GPUComputationRenderer = function ( sizeX, sizeY, renderer ) {
 		passThruTexture: { value: null }
 	};
 
-	function createShaderMaterial( computeFragmentShader, uniforms ) {
+        function addResolutionDefine( material ) {
+                material.defines.resolution = 'vec2( ' + sizeX.toFixed( 1 ) + ', ' + sizeY.toFixed( 1 ) + ' )';
+        }
+
+        function createShaderMaterial( computeFragmentShader, uniforms ) {
 
 		uniforms = uniforms || {};
 
@@ -50,7 +54,7 @@ var GPUComputationRenderer = function ( sizeX, sizeY, renderer ) {
 
 		} );
 
-		addResolutionDefine( material );
+                addResolutionDefine( material );
 
 		return material;
 
@@ -62,7 +66,7 @@ var GPUComputationRenderer = function ( sizeX, sizeY, renderer ) {
 	scene.add( mesh );
 
 
-	this.addVariable = function ( variableName, computeFragmentShader, initialValueTexture ) {
+       this.addVariable = function ( variableName, computeFragmentShader, initialValueTexture ) {
 
 		var material = this.createShaderMaterial( computeFragmentShader );
 
@@ -92,19 +96,21 @@ var GPUComputationRenderer = function ( sizeX, sizeY, renderer ) {
 
 		var uniforms = material.uniforms;
 
-		for ( var v = 0; v < this.variables.length; v++ ) {
+               for ( var v = 0; v < this.variables.length; v++ ) {
 
-			var selVar = this.variables[ v ];
+                       var selVar = this.variables[ v ];
 
-			if ( selVar.name !== variableName ) {
+                       if ( selVar.name !== variableName ) {
 
-				material.uniforms[ selVar.name ] = { value: null };
+                               material.uniforms[ selVar.name ] = { value: null };
 
-			}
+                       }
 
-		}
+               }
 
-	};
+               return variable;
+
+       };
 
 	this.setVariableDependencies = function ( variable, dependencies ) {
 
@@ -121,21 +127,23 @@ var GPUComputationRenderer = function ( sizeX, sizeY, renderer ) {
 
 	};
 
-	this.createShaderMaterial = function ( computeFragmentShader, uniforms ) {
+       this.createShaderMaterial = function ( computeFragmentShader, uniforms ) {
 
-		uniforms = uniforms || {};
+               uniforms = uniforms || {};
 
-		var material = new ShaderMaterial( {
+               var material = new ShaderMaterial( {
 
-			uniforms: uniforms,
-			vertexShader: getPassThroughVertexShader(),
-			fragmentShader: computeFragmentShader
+                       uniforms: uniforms,
+                       vertexShader: getPassThroughVertexShader(),
+                       fragmentShader: computeFragmentShader
 
-		} );
+               } );
 
-		return material;
+               addResolutionDefine( material );
 
-	};
+               return material;
+
+       };
 
 	this.init = function () {
 
