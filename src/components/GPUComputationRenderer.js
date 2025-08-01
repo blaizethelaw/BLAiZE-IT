@@ -133,8 +133,6 @@ var GPUComputationRenderer = function ( sizeX, sizeY, renderer ) {
 
 		} );
 
-		this.addResolutionDefine( material );
-
 		return material;
 
 	};
