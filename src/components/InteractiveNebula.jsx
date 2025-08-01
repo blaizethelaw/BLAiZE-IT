@@ -22,7 +22,7 @@ function Nebula({ adaptiveQualityManager }) {
         channels: 4,
     });
 
-    gpgpu.addPass({
+    const pass = gpgpu.addPass({
         fragment: `
             precision highp float;
             uniform sampler2D u_data;
@@ -72,6 +72,8 @@ function Nebula({ adaptiveQualityManager }) {
             u_mouse: { value: new THREE.Vector2(0, 0) },
         },
     });
+
+    gpgpu.init();
 
     return gpgpu;
   }, [gl]);
