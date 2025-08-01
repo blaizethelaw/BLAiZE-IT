@@ -126,23 +126,39 @@ var GPUComputationRenderer = function ( sizeX, sizeY, renderer ) {
 
 	};
 
+ codex/consolidate-addresolutiondefine-declarations
        this.createShaderMaterial = function ( computeFragmentShader, uniforms ) {
 
-		uniforms = uniforms || {};
+        this.createShaderMaterial = function ( computeFragmentShader, uniforms ) {
+ main
 
+                uniforms = uniforms || {};
+
+ codex/consolidate-addresolutiondefine-declarations
                var material = new ShaderMaterial( {
 
-			uniforms: uniforms,
-			vertexShader: getPassThroughVertexShader(),
-			fragmentShader: computeFragmentShader
+                var material = new ShaderMaterial( {
+ main
 
+			uniforms: uniforms,
+                        vertexShader: getPassThroughVertexShader(),
+                        fragmentShader: computeFragmentShader
+
+ codex/consolidate-addresolutiondefine-declarations
                } );
 
                this.addResolutionDefine( material );
 
                return material;
 
-	};
+                } );
+
+                this.addResolutionDefine( material );
+ main
+
+                return material;
+
+        };
 
 	this.init = function () {
 
@@ -201,7 +217,7 @@ var GPUComputationRenderer = function ( sizeX, sizeY, renderer ) {
 
 	};
 
-	this.createRenderTarget = function ( sizeXTexture, sizeYTexture, wrapS, wrapT, minFilter, magFilter ) {
+        this.createRenderTarget = function ( sizeXTexture, sizeYTexture, wrapS, wrapT, minFilter, magFilter ) {
 
 		sizeXTexture = sizeXTexture || sizeX;
 		sizeYTexture = sizeYTexture || sizeY;
@@ -222,9 +238,20 @@ var GPUComputationRenderer = function ( sizeX, sizeY, renderer ) {
 			stencilBuffer: false
 		} );
 
-		return renderTarget;
+                return renderTarget;
 
-	};
+        };
+
+        this.createTexture = function () {
+                const data = new Float32Array(sizeX * sizeY * 4);
+                const texture = new DataTexture(data, sizeX, sizeY, RGBAFormat, FloatType);
+                texture.needsUpdate = true;
+                return texture;
+        };
+
+        this.getCurrentRenderTarget = function ( variable ) {
+                return variable.renderTargets[this.currentTextureIndex];
+        };
 
 	this.doRenderTarget = function ( material, output ) {
 
