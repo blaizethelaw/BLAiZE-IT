@@ -18,7 +18,7 @@ const particleRenderVertexShader = `
 const particleRenderFragmentShader = `
   precision mediump float;
   void main() {
-    gl_FragColor = vec4(0.3, 0.6, 1.0, 0.5);
+    gl_FragColor = vec4(1.0, 0.0, 0.0, 1.0); // Red
   }
 `;
 
@@ -46,7 +46,7 @@ const velocityFragmentShader = `
   const mat2 m2 = mat2(0.8,-0.6,0.6,0.8);
 
   float noise(vec3 p) {
-    return sin(p.x)*sin(p.y);
+    return sin(p.x)*sin(p.y)*sin(p.z);
   }
 
   float fbm(vec3 p) {
