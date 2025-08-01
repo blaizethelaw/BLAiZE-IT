@@ -637,10 +637,14 @@ function ContactSection() {
 }
 
 
+import { AdaptiveQualityManager } from "./components/AdaptiveQualityManager.js";
+
 // --- Main App Component ---
 export default function App() {
   // State to manage the current "page" or section in this single-file app
   const [currentPage, setCurrentPage] = useState("home");
+  const [adaptiveQualityManager, setAdaptiveQualityManager] = useState(null);
+
 
   // This useEffect will handle initial scroll to the home section on load
   useEffect(() => {
@@ -677,7 +681,7 @@ export default function App() {
         `
       }}></script>
 
-      <InteractiveNebula />
+      <InteractiveNebula adaptiveQualityManager={adaptiveQualityManager} setAdaptiveQualityManager={setAdaptiveQualityManager} />
       <Navbar currentPage={currentPage} setCurrentPage={setCurrentPage} />
 
       <main className="pt-16"> {/* Add padding top to account for fixed navbar */}
