@@ -1,134 +1,193 @@
 import React, { Suspense, useRef, useMemo, useEffect } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import * as THREE from 'three';
+import { GPUComputationRenderer } from './GPUComputationRenderer.js';
+import { AdaptiveQualityManager } from './AdaptiveQualityManager.js';
 
-const vertexShader = `
-  uniform float uTime;
-  uniform vec2 uMouse;
-  uniform float uPixelRatio;
-  uniform float uSize;
-  attribute float aScale;
-  varying vec3 vColor;
-  vec3 mod289(vec3 x) { return x - floor(x * (1.0 / 289.0)) * 289.0; }
-  vec4 mod289(vec4 x) { return x - floor(x * (1.0 / 289.0)) * 289.0; }
-  vec4 permute(vec4 x) { return mod289(((x*34.0)+1.0)*x); }
-  vec4 taylorInvSqrt(vec4 r) { return 1.79284291400159 - 0.85373472095314 * r; }
-  float snoise(vec3 v) {
-    const vec2 C = vec2(1.0/6.0, 1.0/3.0);
-    const vec4 D = vec4(0.0, 0.5, 1.0, 2.0);
-    vec3 i = floor(v + dot(v, C.yyy));
-    vec3 x0 = v - i + dot(i, C.xxx);
-    vec3 g = step(x0.yzx, x0.xyz);
-    vec3 l = 1.0 - g;
-    vec3 i1 = min(g.xyz, l.zxy);
-    vec3 i2 = max(g.xyz, l.zxy);
-    vec3 x1 = x0 - i1 + C.xxx;
-    vec3 x2 = x0 - i2 + C.yyy;
-    vec3 x3 = x0 - D.yyy;
-    i = mod289(i);
-    vec4 p = permute(permute(permute(
-              i.z + vec4(0.0, i1.z, i2.z, 1.0))
-            + i.y + vec4(0.0, i1.y, i2.y, 1.0))
-            + i.x + vec4(0.0, i1.x, i2.x, 1.0));
-    float n_ = 0.142857142857;
-    vec3 ns = n_ * D.wyz - D.xzx;
-    vec4 j = p - 49.0 * floor(p * ns.z * ns.z);
-    vec4 x_ = floor(j * ns.z);
-    vec4 y_ = floor(j - 7.0 * x_);
-    vec4 x = x_ * ns.x + ns.yyyy;
-    vec4 y = y_ * ns.x + ns.yyyy;
-    vec4 h = 1.0 - abs(x) - abs(y);
-    vec4 b0 = vec4(x.xy, y.xy);
-    vec4 b1 = vec4(x.zw, y.zw);
-    vec4 s0 = floor(b0) * 2.0 + 1.0;
-    vec4 s1 = floor(b1) * 2.0 + 1.0;
-    vec4 sh = -step(h, vec4(0.0));
-    vec4 a0 = b0.xzyw + s0.xzyw * sh.xxyy;
-    vec4 a1 = b1.xzyw + s1.xzyw * sh.zzww;
-    vec3 p0 = vec3(a0.xy, h.x);
-    vec3 p1 = vec3(a0.zw, h.y);
-    vec3 p2 = vec3(a1.xy, h.z);
-    vec3 p3 = vec3(a1.zw, h.w);
-    vec4 norm = taylorInvSqrt(vec4(dot(p0, p0), dot(p1, p1), dot(p2, p2), dot(p3, p3)));
-    p0 *= norm.x;
-    p1 *= norm.y;
-    p2 *= norm.z;
-    p3 *= norm.w;
-    vec4 m = max(0.6 - vec4(dot(x0, x0), dot(x1, x1), dot(x2, x2), dot(x3, x3)), 0.0);
-    m = m * m;
-    return 42.0 * dot(m * m, vec4(dot(p0, x0), dot(p1, x1), dot(p2, x2), dot(p3, x3)));
-  }
+const particleRenderVertexShader = `
+  uniform sampler2D u_positions;
+  uniform float u_size;
+
   void main() {
-    vec3 pos = position;
-    float noise = snoise(vec3(pos.x * 0.5 + uTime * 0.1, pos.y * 0.5 + uTime * 0.1, uTime * 0.1));
-    pos.z += noise * 0.2;
-    float dist = distance(pos.xy, uMouse);
-    float pullFactor = 1.0 - smoothstep(0.0, 0.5, dist);
-    pos.xy = mix(pos.xy, uMouse, pullFactor * 0.1);
-    pos.z += pullFactor * 0.5;
-    vec4 modelPosition = modelMatrix * vec4(pos, 1.0);
-    vec4 viewPosition = viewMatrix * modelPosition;
-    vec4 projectedPosition = projectionMatrix * viewPosition;
-    gl_Position = projectedPosition;
-    gl_PointSize = uSize * aScale * uPixelRatio;
-    gl_PointSize *= (1.0 / -viewPosition.z);
-    vColor = vec3(0.5 + pullFactor * 0.5, 0.5 - pullFactor * 0.2, 0.8);
-    vColor = mix(vColor, vec3(1.0, 1.0, 1.0), noise * 0.5);
+    vec3 pos = texture2D(u_positions, position.xy).xyz;
+    gl_Position = projectionMatrix * modelViewMatrix * vec4(pos, 1.0);
+    gl_PointSize = u_size;
   }
 `;
 
-const fragmentShader = `
-  varying vec3 vColor;
+const particleRenderFragmentShader = `
   void main() {
-    float strength = distance(gl_PointCoord, vec2(0.5));
-    strength = 1.0 - step(0.5, strength);
-    gl_FragColor = vec4(vColor, strength * 0.5);
+    gl_FragColor = vec4(0.3, 0.6, 1.0, 0.5);
   }
 `;
 
-function Nebula() {
-  const { size, viewport } = useThree();
+const positionFragmentShader = `
+  uniform float u_time;
+  uniform sampler2D u_velocities;
+
+  void main() {
+    vec2 uv = gl_FragCoord.xy / resolution.xy;
+    vec3 pos = texture2D(u_positions, uv).xyz;
+    vec3 vel = texture2D(u_velocities, uv).xyz;
+
+    pos += vel * 0.016;
+
+    gl_FragColor = vec4(pos, 1.0);
+  }
+`;
+
+const velocityFragmentShader = `
+  uniform float u_time;
+  uniform vec2 u_mouse;
+
+  const mat2 m2 = mat2(0.8,-0.6,0.6,0.8);
+
+  float noise(vec3 p) {
+    return sin(p.x)*sin(p.y)*sin(p.z);
+  }
+
+  float fbm(vec3 p) {
+      float f = 0.0;
+      f += 0.5000*noise( p ); p = m2*p*2.02;
+      f += 0.2500*noise( p ); p = m2*p*2.03;
+      f += 0.1250*noise( p ); p = m2*p*2.01;
+      f += 0.0625*noise( p );
+      return f/0.9375;
+  }
+
+  float pattern(vec3 p) {
+    vec3 q = vec3( fbm( p + vec3(0.0,0.0,0.0) ),
+                   fbm( p + vec3(5.2,1.3,4.6) ),
+                   fbm( p + vec3(11.2,7.3,9.6) ) );
+
+    vec3 r = vec3( fbm( p + 4.0*q + vec3(1.7,9.2,5.5) ),
+                   fbm( p + 4.0*q + vec3(8.3,2.8,1.2) ),
+                   fbm( p + 4.0*q + vec3(15.3,12.8,7.2) ) );
+
+    return fbm( p + 4.0*r );
+  }
+
+  void main() {
+    vec2 uv = gl_FragCoord.xy / resolution.xy;
+    vec3 pos = texture2D(u_positions, uv).xyz;
+    vec3 vel = texture2D(u_velocities, uv).xyz;
+
+    float dist = distance(pos.xy, u_mouse);
+    float influence = 1.0 - smoothstep(0.0, 2.0, dist);
+    vec2 direction = normalize(pos.xy - u_mouse);
+
+    vel.xy += direction * influence * 0.1;
+
+    // Add noise
+    vel.xy += vec2(
+      pattern(pos + u_time * 0.01),
+      pattern(pos + u_time * 0.01 + 100.0)
+    ) * 0.01;
+
+    vel *= 0.99;
+
+    gl_FragColor = vec4(vel, 1.0);
+  }
+`;
+
+
+function Nebula({ adaptiveQualityManager }) {
+  const { gl, size, viewport } = useThree();
   const mouse = useRef([0, 0]);
-  const uniforms = useMemo(() => ({
-    uTime: { value: 0 },
-    uMouse: { value: new THREE.Vector2(0, 0) },
-    uSize: { value: 60.0 },
-    uPixelRatio: { value: Math.min(window.devicePixelRatio, 2) }
-  }), []);
-  const particles = useMemo(() => {
-    const count = 5000;
-    const positions = new Float32Array(count * 3);
-    const scales = new Float32Array(count);
-    for (let i = 0; i < count; i++) {
-      positions[i * 3] = (Math.random() - 0.5) * 10;
-      positions[i * 3 + 1] = (Math.random() - 0.5) * 10;
-      positions[i * 3 + 2] = (Math.random() - 0.5) * 2;
-      scales[i] = Math.random() * 0.5 + 0.5;
+
+  const PARTICLE_COUNT = 100000;
+  const WIDTH = Math.sqrt(PARTICLE_COUNT);
+  const HEIGHT = Math.sqrt(PARTICLE_COUNT);
+
+  const gpuCompute = useMemo(() => {
+    const compute = new GPUComputationRenderer(WIDTH, HEIGHT, gl);
+
+    const posTexture = compute.createTexture();
+    const velTexture = compute.createTexture();
+
+    const posData = posTexture.image.data;
+    const velData = velTexture.image.data;
+
+    for (let i = 0; i < posData.length; i += 4) {
+      const angle = Math.random() * Math.PI * 2;
+      const radius = Math.sqrt(Math.random()) * 5;
+
+      posData[i] = Math.cos(angle) * radius;
+      posData[i + 1] = Math.sin(angle) * radius;
+      posData[i + 2] = (Math.random() - 0.5) * 2;
+      posData[i + 3] = 1.0;
+
+      velData[i] = 0;
+      velData[i + 1] = 0;
+      velData[i + 2] = 0;
+      velData[i + 3] = 1.0;
     }
-    const geo = new THREE.BufferGeometry();
-    geo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-    geo.setAttribute('aScale', new THREE.BufferAttribute(scales, 1));
-    return geo;
+
+    const positionVariable = compute.addVariable("u_positions", positionFragmentShader, posTexture);
+    const velocityVariable = compute.addVariable("u_velocities", velocityFragmentShader, velTexture);
+
+    compute.setVariableDependencies(positionVariable, [velocityVariable]);
+    compute.setVariableDependencies(velocityVariable, [positionVariable, velocityVariable]);
+
+    positionVariable.material.uniforms.u_time = { value: 0 };
+    velocityVariable.material.uniforms.u_time = { value: 0 };
+    velocityVariable.material.uniforms.u_mouse = { value: new THREE.Vector2(0,0) };
+
+    const error = compute.init();
+    if (error !== null) {
+        console.error(error);
+    }
+    return compute;
+  }, [gl]);
+
+  const particles = useMemo(() => {
+    const geometry = new THREE.BufferGeometry();
+    const positions = new Float32Array(PARTICLE_COUNT * 3);
+    for (let i = 0; i < PARTICLE_COUNT; i++) {
+        positions[i * 3 + 0] = (i % WIDTH) / WIDTH;
+        positions[i * 3 + 1] = Math.floor(i / WIDTH) / HEIGHT;
+    }
+    geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+    return geometry;
   }, []);
+
+  const uniforms = useMemo(() => ({
+    u_positions: { value: null },
+    u_size: { value: 1.0 }
+  }), []);
+
   useFrame((state, delta) => {
-    uniforms.uTime.value += delta * 0.2;
-    const targetMouse = new THREE.Vector2(
-      (mouse.current[0] / size.width) * 2 - 1,
-      -(mouse.current[1] / size.height) * 2 + 1
-    ).multiplyScalar(viewport.width / 2);
-    uniforms.uMouse.value.lerp(targetMouse, 0.05);
+    if (adaptiveQualityManager) {
+      adaptiveQualityManager.update();
+    }
+
+    gpuCompute.variables[1].material.uniforms.u_mouse.value.lerp(
+        new THREE.Vector2(
+            (mouse.current[0] / size.width) * 2 - 1,
+            -(mouse.current[1] / size.height) * 2 + 1
+        ).multiplyScalar(viewport.width/2),
+        0.1
+    );
+
+    gpuCompute.compute();
+
+    uniforms.u_positions.value = gpuCompute.getCurrentRenderTarget(gpuCompute.variables[0]).texture;
   });
+
   useEffect(() => {
-    const handleMouseMove = (e) => { mouse.current = [e.clientX, e.clientY]; };
+    const handleMouseMove = (e) => {
+      mouse.current = [e.clientX, e.clientY];
+    };
     window.addEventListener('mousemove', handleMouseMove);
     return () => window.removeEventListener('mousemove', handleMouseMove);
   }, []);
+
   return (
     <points geometry={particles}>
       <shaderMaterial
         uniforms={uniforms}
-        vertexShader={vertexShader}
-        fragmentShader={fragmentShader}
+        vertexShader={particleRenderVertexShader}
+        fragmentShader={particleRenderFragmentShader}
         transparent
         blending={THREE.AdditiveBlending}
         depthWrite={false}
@@ -137,12 +196,28 @@ function Nebula() {
   );
 }
 
-export default function InteractiveNebula() {
+export default function InteractiveNebula({ adaptiveQualityManager, setAdaptiveQualityManager }) {
   return (
-    <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', zIndex: -1, pointerEvents: 'none' }}>
-      <Canvas camera={{ position: [0, 0, 2], fov: 75 }} onCreated={({ gl }) => { gl.setClearColor('#000000', 1); }}>
+    <div style={{
+      position: 'fixed',
+      top: 0,
+      left: 0,
+      width: '100%',
+      height: '100%',
+      zIndex: 0,
+      pointerEvents: 'none',
+    }}>
+      <Canvas
+        camera={{ position: [0, 0, 3], fov: 75 }}
+        onCreated={({ gl, scene }) => {
+          gl.setClearColor('#000000', 1);
+          if (!adaptiveQualityManager) {
+            setAdaptiveQualityManager(new AdaptiveQualityManager(gl, scene));
+          }
+        }}
+      >
         <Suspense fallback={null}>
-          <Nebula />
+          <Nebula adaptiveQualityManager={adaptiveQualityManager} />
         </Suspense>
       </Canvas>
     </div>

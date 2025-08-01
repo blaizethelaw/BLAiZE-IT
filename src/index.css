@@ -8,6 +8,11 @@
 
 /* Set the entire site background to slate */
 body {
+  @apply bg-blaize-slate;
+}
+
+/* Set the entire site background to slate */
+body {
   @apply bg-blaize-slate text-white font-sans;
 }
 
