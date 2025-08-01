@@ -7,7 +7,6 @@ import HolographicGrid from './components/HolographicGrid';
 import ThreeScene from './components/ThreeScene';
 import WhoisLookup from './components/WhoisLookup';
 import InteractiveNebula from './components/InteractiveNebula';
-import { AdaptiveQualityManager } from "./components/AdaptiveQualityManager.js";
 // --- Utility Components ---
 
 /**
@@ -93,17 +92,12 @@ function BookingButton() {
     <div className="flex justify-center py-12">
       <button
         onClick={handleBookingClick}
-        className="relative px-8 py-4 rounded-full font-bold text-black text-xl
+        className="px-8 py-4 rounded-full font-bold text-black text-xl
                    bg-gradient-to-r from-blaize-green via-blaize-yellow to-blaize-orange
-                   shadow-lg shadow-blaize-green/40 transition-all duration-500
-                   transform hover:scale-105 focus:outline-none overflow-hidden group
-                   before:absolute before:inset-0 before:bg-gradient-to-r before:from-transparent before:via-white/20 before:to-transparent
-                   before:translate-x-[-200%] hover:before:translate-x-[200%] before:transition-transform before:duration-700
-                   after:absolute after:inset-0 after:bg-gradient-to-r after:from-cyan-400/0 after:via-cyan-400/30 after:to-cyan-400/0
-                   after:blur-xl after:scale-y-0 hover:after:scale-y-100 after:transition-transform after:duration-500"
+                   shadow-lg shadow-blaize-green/40 hover:brightness-110 transition-all duration-300
+                   transform hover:scale-105 focus:outline-none focus:ring-4 focus:ring-blaize-green/50"
       >
-        <span className="relative z-10">Book a Consultation Now!</span>
-        <div className="absolute inset-0 bg-gradient-to-r from-cyan-400/20 to-purple-400/20 blur-2xl group-hover:blur-3xl transition-all duration-500 animate-pulse"></div>
+        Book a Consultation Now!
       </button>
     </div>
   );
@@ -169,7 +163,7 @@ function Navbar({ currentPage, setCurrentPage }) {
                         ? "text-blaize-green"
                         : "text-white/90 hover:text-blaize-green transition-colors duration-300"
                     }
-                    after:content-[''] after:absolute after:bottom-0 after:left-0 after:w-full after:h-[2px] after:bg-gradient-to-r after:from-cyan-400 after:to-blaize-green after:scale-x-0 after:transition-transform after:duration-300 after:ease-out
+                    after:content-[''] after:absolute after:bottom-0 after:left-0 after:w-full after:h-[2px] after:bg-blaize-green after:scale-x-0 after:transition-transform after:duration-300 after:ease-out
                     ${currentPage === item.path ? "after:scale-x-100" : "group-hover:after:scale-x-100"}
                   `}
                 >
@@ -225,7 +219,8 @@ function Navbar({ currentPage, setCurrentPage }) {
 function HeroSection() {
   return (
     <section id="home" className="relative h-screen flex items-center justify-center">
-      <div className="relative z-10 text-center text-white p-4 max-w-4xl mx-auto">
+      <InteractiveNebula />
+      <div className="relative z-10 text-center text-white p-4 max-w-4xl mx-auto" style={{ position: 'absolute', zIndex: 10 }}>
         <h1 className="text-4xl md:text-6xl font-extrabold mb-4 leading-tight drop-shadow-lg">
           <span className="bg-gradient-to-r from-blaize-green via-blaize-yellow to-blaize-orange text-transparent bg-clip-text">
             BLAiZE IT
@@ -297,9 +292,7 @@ function ServicesCarousel() {
       <div className="relative max-w-5xl mx-auto">
         <div className="flex items-center justify-center">
           {/* Carousel Card */}
-          <div className="relative bg-zinc-900 border border-blaize-green/30 rounded-xl p-8 shadow-glow w-full md:w-3/4 lg:w-2/3 text-center
-                          transition-all duration-500 hover:border-blaize-green/60 hover:shadow-2xl hover:shadow-green-400/20">
-            <div className="absolute -inset-px bg-gradient-to-r from-cyan-400/30 to-blaize-green/30 rounded-xl blur-lg opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+          <div className="bg-zinc-900 border border-blaize-green/30 rounded-xl p-8 shadow-glow w-full md:w-3/4 lg:w-2/3 text-center">
             <img
               src={servicesData[currentIndex].icon}
               alt={servicesData[currentIndex].title}
@@ -317,16 +310,14 @@ function ServicesCarousel() {
         {/* Navigation Buttons */}
         <button
           onClick={prevService}
-          className="absolute left-0 top-1/2 -translate-y-1/2 p-3 bg-blaize-green/70 rounded-full text-white transition-all duration-300 z-10 ml-2
-                    hover:bg-blaize-green hover:shadow-glow hover:scale-110"
+          className="absolute left-0 top-1/2 -translate-y-1/2 p-3 bg-blaize-green/70 rounded-full text-white hover:bg-blaize-green transition-colors duration-300 z-10 ml-2"
           aria-label="Previous service"
         >
           <ChevronLeft size={24} />
         </button>
         <button
           onClick={nextService}
-          className="absolute right-0 top-1/2 -translate-y-1/2 p-3 bg-blaize-green/70 rounded-full text-white transition-all duration-300 z-10 mr-2
-                    hover:bg-blaize-green hover:shadow-glow hover:scale-110"
+          className="absolute right-0 top-1/2 -translate-y-1/2 p-3 bg-blaize-green/70 rounded-full text-white hover:bg-blaize-green transition-colors duration-300 z-10 mr-2"
           aria-label="Next service"
         >
           <ChevronRight size={24} />
@@ -350,21 +341,15 @@ function AboutSection() {
           We believe in a collaborative approach, working closely with our clients to understand their unique challenges and goals. From concept to deployment, we are committed to transparency, quality, and delivering results that exceed expectations.
         </p>
         <div className="mt-10 grid grid-cols-1 md:grid-cols-3 gap-8">
-          <div className="relative bg-zinc-900 p-6 rounded-lg shadow-md border border-blaize-yellow/30 overflow-hidden group
-                          transition-all duration-500 hover:border-blaize-yellow/60 hover:shadow-xl hover:shadow-yellow-400/20">
-            <div className="absolute inset-0 bg-gradient-to-br from-yellow-400/10 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+          <div className="bg-zinc-900 p-6 rounded-lg shadow-md border border-blaize-yellow/30">
             <h3 className="text-xl font-semibold text-blaize-yellow mb-2">Innovation</h3>
             <p className="text-white/80">Constantly exploring new technologies to keep you ahead.</p>
           </div>
-          <div className="relative bg-zinc-900 p-6 rounded-lg shadow-md border border-blaize-green/30 overflow-hidden group
-                          transition-all duration-500 hover:border-blaize-green/60 hover:shadow-xl hover:shadow-green-400/20">
-            <div className="absolute inset-0 bg-gradient-to-br from-green-400/10 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+          <div className="bg-zinc-900 p-6 rounded-lg shadow-md border border-blaize-green/30">
             <h3 className="text-xl font-semibold text-blaize-green mb-2">Quality</h3>
             <p className="text-white/80">Delivering robust and reliable solutions every time.</p>
           </div>
-          <div className="relative bg-zinc-900 p-6 rounded-lg shadow-md border border-blaize-orange/30 overflow-hidden group
-                          transition-all duration-500 hover:border-blaize-orange/60 hover:shadow-xl hover:shadow-orange-400/20">
-            <div className="absolute inset-0 bg-gradient-to-br from-orange-400/10 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+          <div className="bg-zinc-900 p-6 rounded-lg shadow-md border border-blaize-orange/30">
             <h3 className="text-xl font-semibold text-blaize-orange mb-2">Client Focus</h3>
             <p className="text-white/80">Your success is our top priority, built on strong partnerships.</p>
           </div>
@@ -417,10 +402,7 @@ function TestimonialsCarousel() {
       <div className="relative max-w-4xl mx-auto">
         <div className="flex items-center justify-center">
           {/* Testimonial Card */}
-          <div className="relative bg-zinc-900 border border-blaize-yellow/30 rounded-xl p-8 shadow-glow w-full text-center
-                          transition-all duration-500 hover:border-blaize-yellow/60
-                          hover:shadow-2xl hover:shadow-yellow-400/20">
-            <div className="absolute -inset-px bg-gradient-to-r from-blaize-yellow/30 to-transparent rounded-xl blur-lg opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+          <div className="bg-zinc-900 border border-blaize-yellow/30 rounded-xl p-8 shadow-glow w-full text-center">
             <img
               src={testimonialsData[currentIndex].avatar}
               alt={testimonialsData[currentIndex].author}
@@ -533,9 +515,7 @@ function ContactSection() {
       <h2 className="text-3xl md:text-4xl font-bold mb-8 bg-gradient-to-r from-blaize-green via-blaize-yellow to-blaize-orange text-transparent bg-clip-text text-center">
         Contact Us
       </h2>
-      <div className="bg-zinc-900 border border-blaize-yellow/30 rounded-xl p-8 shadow-glow w-full max-w-xl
-                      transition-all duration-500 hover:border-blaize-yellow/60 hover:shadow-2xl hover:shadow-yellow-400/20
-                  ">
+      <div className="bg-zinc-900 border border-blaize-yellow/30 rounded-xl p-8 shadow-glow w-full max-w-xl">
         <div className="mb-6 text-white/80 text-center">
           <div className="mb-2">
             <b>Email:</b>{" "}
@@ -560,8 +540,7 @@ function ContactSection() {
               placeholder="Your Name"
               className={`bg-black/80 border ${
                 errors.name ? "border-red-500" : "border-blaize-green/50"
-              } rounded px-4 py-3 text-white w-full focus:outline-none focus:ring-2 focus:ring-blaize-green transition-all duration-300
-                 hover:border-blaize-green/80`}
+              } rounded px-4 py-3 text-white w-full focus:outline-none focus:ring-2 focus:ring-blaize-green`}
             />
             {errors.name && (
               <p className="text-red-400 text-sm mt-1">{errors.name}</p>
@@ -576,8 +555,7 @@ function ContactSection() {
               placeholder="Your Email"
               className={`bg-black/80 border ${
                 errors.email ? "border-red-500" : "border-blaize-yellow/50"
-              } rounded px-4 py-3 text-white w-full focus:outline-none focus:ring-2 focus:ring-blaize-yellow transition-all duration-300
-                 hover:border-blaize-yellow/80`}
+              } rounded px-4 py-3 text-white w-full focus:outline-none focus:ring-2 focus:ring-blaize-yellow`}
             />
             {errors.email && (
               <p className="text-red-400 text-sm mt-1">{errors.email}</p>
@@ -592,8 +570,7 @@ function ContactSection() {
               rows={4}
               className={`bg-black/80 border ${
                 errors.message ? "border-red-500" : "border-blaize-orange/50"
-              } rounded px-4 py-3 text-white w-full focus:outline-none focus:ring-2 focus:ring-blaize-orange transition-all duration-300
-                 hover:border-blaize-orange/80`}
+              } rounded px-4 py-3 text-white w-full focus:outline-none focus:ring-2 focus:ring-blaize-orange`}
             />
             {errors.message && (
               <p className="text-red-400 text-sm mt-1">{errors.message}</p>
@@ -603,8 +580,8 @@ function ContactSection() {
             type="submit"
             disabled={submissionStatus === "loading"}
             className={`
-              relative py-3 rounded font-bold text-black shadow-glow transition-all duration-500
-              flex items-center justify-center gap-2 overflow-hidden group
+              py-3 rounded font-bold text-black shadow-glow transition
+              flex items-center justify-center gap-2
               ${
                 submissionStatus === "loading"
                   ? "bg-gray-600 cursor-not-allowed"
@@ -612,11 +589,10 @@ function ContactSection() {
               }
             `}
           >
-            <span className="absolute inset-0 bg-gradient-to-r from-white/30 to-transparent -translate-x-full group-hover:translate-x-0 transition-transform duration-500"></span>
             {submissionStatus === "loading" && (
-              <Loader2 className="animate-spin relative z-10" size={20} />
+              <Loader2 className="animate-spin" size={20} />
             )}
-            <span className="relative z-10">{submissionStatus === "loading" ? "Sending..." : "Send Message"}</span>
+            {submissionStatus === "loading" ? "Sending..." : "Send Message"}
           </button>
         </form>
 
@@ -642,8 +618,6 @@ function ContactSection() {
 export default function App() {
   // State to manage the current "page" or section in this single-file app
   const [currentPage, setCurrentPage] = useState("home");
-  const [adaptiveQualityManager, setAdaptiveQualityManager] = useState(null);
-
 
   // This useEffect will handle initial scroll to the home section on load
   useEffect(() => {
@@ -654,7 +628,7 @@ export default function App() {
   }, []); // Empty dependency array means this runs once on mount
 
   return (
-    <div className="font-sans antialiased bg-blaize-slate text-white">
+    <div className="font-sans antialiased text-white">
       {/* Tailwind CSS CDN - IMPORTANT for styling */}
       <script src="https://cdn.tailwindcss.com"></script>
       {/* Custom Tailwind Configuration - Now injected correctly */}
@@ -680,7 +654,9 @@ export default function App() {
         `
       }}></script>
 
-      <InteractiveNebula adaptiveQualityManager={adaptiveQualityManager} setAdaptiveQualityManager={setAdaptiveQualityManager} />
+      <Starfield />
+      <HolographicGrid />
+      <ThreeScene />
       <Navbar currentPage={currentPage} setCurrentPage={setCurrentPage} />
 
       <main className="pt-16"> {/* Add padding top to account for fixed navbar */}
