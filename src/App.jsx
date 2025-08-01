@@ -719,5 +719,3 @@ export default function App() {
     </div>
   );
 }
-
-[end of src/App.jsx]
