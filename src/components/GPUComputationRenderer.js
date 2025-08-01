@@ -125,21 +125,23 @@ var GPUComputationRenderer = function ( sizeX, sizeY, renderer ) {
 
 	};
 
-	this.createShaderMaterial = function ( computeFragmentShader, uniforms ) {
+        this.createShaderMaterial = function ( computeFragmentShader, uniforms ) {
 
-		uniforms = uniforms || {};
+                uniforms = uniforms || {};
 
-		var material = new ShaderMaterial( {
+                var material = new ShaderMaterial( {
 
 			uniforms: uniforms,
-			vertexShader: getPassThroughVertexShader(),
-			fragmentShader: computeFragmentShader
+                        vertexShader: getPassThroughVertexShader(),
+                        fragmentShader: computeFragmentShader
 
-		} );
+                } );
 
-		return material;
+                this.addResolutionDefine( material );
 
-	};
+                return material;
+
+        };
 
 	this.init = function () {
 
@@ -198,7 +200,7 @@ var GPUComputationRenderer = function ( sizeX, sizeY, renderer ) {
 
 	};
 
-	this.createRenderTarget = function ( sizeXTexture, sizeYTexture, wrapS, wrapT, minFilter, magFilter ) {
+        this.createRenderTarget = function ( sizeXTexture, sizeYTexture, wrapS, wrapT, minFilter, magFilter ) {
 
 		sizeXTexture = sizeXTexture || sizeX;
 		sizeYTexture = sizeYTexture || sizeY;
@@ -219,9 +221,20 @@ var GPUComputationRenderer = function ( sizeX, sizeY, renderer ) {
 			stencilBuffer: false
 		} );
 
-		return renderTarget;
+                return renderTarget;
 
-	};
+        };
+
+        this.createTexture = function () {
+                const data = new Float32Array(sizeX * sizeY * 4);
+                const texture = new DataTexture(data, sizeX, sizeY, RGBAFormat, FloatType);
+                texture.needsUpdate = true;
+                return texture;
+        };
+
+        this.getCurrentRenderTarget = function ( variable ) {
+                return variable.renderTargets[this.currentTextureIndex];
+        };
 
 	this.doRenderTarget = function ( material, output ) {
 
