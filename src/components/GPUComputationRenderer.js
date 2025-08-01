@@ -38,11 +38,12 @@ var GPUComputationRenderer = function ( sizeX, sizeY, renderer ) {
 		passThruTexture: { value: null }
 	};
 
-        function addResolutionDefine( material ) {
-                material.defines.resolution = 'vec2( ' + sizeX.toFixed( 1 ) + ', ' + sizeY.toFixed( 1 ) + ' )';
-        }
 
-        function createShaderMaterial( computeFragmentShader, uniforms ) {
+       this.addResolutionDefine = function ( material ) {
+               material.defines.resolution = 'vec2( ' + sizeX.toFixed( 1 ) + ', ' + sizeY.toFixed( 1 ) + ' )';
+       };
+
+       function createShaderMaterial( computeFragmentShader, uniforms ) {
 
 		uniforms = uniforms || {};
 
@@ -54,7 +55,7 @@ var GPUComputationRenderer = function ( sizeX, sizeY, renderer ) {
 
 		} );
 
-                addResolutionDefine( material );
+               this.addResolutionDefine( material );
 
 		return material;
 
@@ -125,19 +126,21 @@ var GPUComputationRenderer = function ( sizeX, sizeY, renderer ) {
 
 	};
 
-	this.createShaderMaterial = function ( computeFragmentShader, uniforms ) {
+       this.createShaderMaterial = function ( computeFragmentShader, uniforms ) {
 
 		uniforms = uniforms || {};
 
-		var material = new ShaderMaterial( {
+               var material = new ShaderMaterial( {
 
 			uniforms: uniforms,
 			vertexShader: getPassThroughVertexShader(),
 			fragmentShader: computeFragmentShader
 
-		} );
+               } );
 
-		return material;
+               this.addResolutionDefine( material );
+
+               return material;
 
 	};
 
@@ -242,11 +245,6 @@ var GPUComputationRenderer = function ( sizeX, sizeY, renderer ) {
 
 	};
 
-	this.addResolutionDefine = function ( material ) {
-
-		material.defines.resolution = 'vec2( ' + sizeX.toFixed( 1 ) + ', ' + sizeY.toFixed( 1 ) + ' )';
-
-	};
 
 	function getPassThroughVertexShader() {
 
