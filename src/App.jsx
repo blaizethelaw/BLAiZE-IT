@@ -7,6 +7,7 @@ import HolographicGrid from './components/HolographicGrid';
 import ThreeScene from './components/ThreeScene';
 import WhoisLookup from './components/WhoisLookup';
 import InteractiveNebula from './components/InteractiveNebula';
+import { AdaptiveQualityManager } from "./components/AdaptiveQualityManager.js";
 // --- Utility Components ---
 
 /**
@@ -637,8 +638,6 @@ function ContactSection() {
 }
 
 
-import { AdaptiveQualityManager } from "./components/AdaptiveQualityManager.js";
-
 // --- Main App Component ---
 export default function App() {
   // State to manage the current "page" or section in this single-file app
@@ -720,3 +719,5 @@ export default function App() {
     </div>
   );
 }
+
+[end of src/App.jsx]
