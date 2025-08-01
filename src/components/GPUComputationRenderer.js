@@ -38,6 +38,24 @@ var GPUComputationRenderer = function ( sizeX, sizeY, renderer ) {
 		passThruTexture: { value: null }
 	};
 
+	function createShaderMaterial( computeFragmentShader, uniforms ) {
+
+		uniforms = uniforms || {};
+
+		var material = new ShaderMaterial( {
+
+			uniforms: uniforms,
+			vertexShader: getPassThroughVertexShader(),
+			fragmentShader: computeFragmentShader
+
+		} );
+
+		addResolutionDefine( material );
+
+		return material;
+
+	};
+
 	var passThruShader = createShaderMaterial( getPassThroughFragmentShader(), passThruUniforms );
 
 	var mesh = new Mesh( new PlaneGeometry( 2, 2 ), passThruShader );
