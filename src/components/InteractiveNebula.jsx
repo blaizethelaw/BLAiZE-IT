@@ -1,186 +1,179 @@
 import React, { Suspense, useRef, useMemo, useEffect } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import * as THREE from 'three';
+import { GPUComputationRenderer } from './GPUComputationRenderer.js';
 
-const vertexShader = `
-  uniform float uTime;
-  uniform vec2 uMouse;
-  uniform float uPixelRatio;
-  uniform float uSize;
-  attribute float aScale;
-  attribute float aSpeed;
-  varying vec3 vColor;
-  varying float vAlpha;
+const particleRenderVertexShader = `
+  precision mediump float;
+  uniform sampler2D u_positions;
+  uniform float u_size;
 
-  vec3 mod289(vec3 x) { return x - floor(x * (1.0 / 289.0)) * 289.0; }
-  vec4 mod289(vec4 x) { return x - floor(x * (1.0 / 289.0)) * 289.0; }
-  vec4 permute(vec4 x) { return mod289(((x*34.0)+1.0)*x); }
-  vec4 taylorInvSqrt(vec4 r) { return 1.79284291400159 - 0.85373472095314 * r; }
+  void main() {
+    vec3 pos = texture2D(u_positions, position.xy).xyz;
+    gl_Position = projectionMatrix * modelViewMatrix * vec4(pos, 1.0);
+    gl_PointSize = u_size;
+  }
+`;
 
-  float snoise(vec3 v) {
-    const vec2 C = vec2(1.0/6.0, 1.0/3.0);
-    const vec4 D = vec4(0.0, 0.5, 1.0, 2.0);
-    vec3 i = floor(v + dot(v, C.yyy));
-    vec3 x0 = v - i + dot(i, C.xxx);
-    vec3 g = step(x0.yzx, x0.xyz);
-    vec3 l = 1.0 - g;
-    vec3 i1 = min(g.xyz, l.zxy);
-    vec3 i2 = max(g.xyz, l.zxy);
-    vec3 x1 = x0 - i1 + C.xxx;
-    vec3 x2 = x0 - i2 + C.yyy;
-    vec3 x3 = x0 - D.yyy;
-    i = mod289(i);
-    vec4 p = permute(permute(permute(
-              i.z + vec4(0.0, i1.z, i2.z, 1.0))
-            + i.y + vec4(0.0, i1.y, i2.y, 1.0))
-            + i.x + vec4(0.0, i1.x, i2.x, 1.0));
-    float n_ = 0.142857142857;
-    vec3 ns = n_ * D.wyz - D.xzx;
-    vec4 j = p - 49.0 * floor(p * ns.z * ns.z);
-    vec4 x_ = floor(j * ns.z);
-    vec4 y_ = floor(j - 7.0 * x_);
-    vec4 x = x_ * ns.x + ns.yyyy;
-    vec4 y = y_ * ns.x + ns.yyyy;
-    vec4 h = 1.0 - abs(x) - abs(y);
-    vec4 b0 = vec4(x.xy, y.xy);
-    vec4 b1 = vec4(x.zw, y.zw);
-    vec4 s0 = floor(b0) * 2.0 + 1.0;
-    vec4 s1 = floor(b1) * 2.0 + 1.0;
-    vec4 sh = -step(h, vec4(0.0));
-    vec4 a0 = b0.xzyw + s0.xzyw * sh.xxyy;
-    vec4 a1 = b1.xzyw + s1.xzyw * sh.zzww;
-    vec3 p0 = vec3(a0.xy, h.x);
-    vec3 p1 = vec3(a0.zw, h.y);
-    vec3 p2 = vec3(a1.xy, h.z);
-    vec3 p3 = vec3(a1.zw, h.w);
-    vec4 norm = taylorInvSqrt(vec4(dot(p0, p0), dot(p1, p1), dot(p2, p2), dot(p3, p3)));
-    p0 *= norm.x;
-    p1 *= norm.y;
-    p2 *= norm.z;
-    p3 *= norm.w;
-    vec4 m = max(0.6 - vec4(dot(x0, x0), dot(x1, x1), dot(x2, x2), dot(x3, x3)), 0.0);
-    m = m * m;
-    return 42.0 * dot(m * m, vec4(dot(p0, x0), dot(p1, x1), dot(p2, x2), dot(p3, x3)));
+const particleRenderFragmentShader = `
+  precision mediump float;
+  void main() {
+    gl_FragColor = vec4(0.3, 0.6, 1.0, 0.5);
+  }
+`;
+
+const positionFragmentShader = `
+  precision mediump float;
+  uniform float u_time;
+  uniform sampler2D u_velocities;
+
+  void main() {
+    vec2 uv = gl_FragCoord.xy / resolution.xy;
+    vec3 pos = texture2D(u_positions, uv).xyz;
+    vec3 vel = texture2D(u_velocities, uv).xyz;
+
+    pos += vel * 0.016;
+
+    gl_FragColor = vec4(pos, 1.0);
+  }
+`;
+
+const velocityFragmentShader = `
+  precision mediump float;
+  uniform float u_time;
+  uniform vec2 u_mouse;
+
+  const mat2 m2 = mat2(0.8,-0.6,0.6,0.8);
+
+  float noise(vec3 p) {
+    return sin(p.x)*sin(p.y);
+  }
+
+  float fbm(vec3 p) {
+      float f = 0.0;
+      f += 0.5000*noise( p ); p = m2*p*2.02;
+      f += 0.2500*noise( p ); p = m2*p*2.03;
+      f += 0.1250*noise( p ); p = m2*p*2.01;
+      f += 0.0625*noise( p );
+      return f/0.9375;
+  }
+
+  float pattern(vec3 p) {
+    vec3 q = vec3( fbm( p + vec3(0.0,0.0,0.0) ),
+                   fbm( p + vec3(5.2,1.3,4.6) ),
+                   fbm( p + vec3(11.2,7.3,9.6) ) );
+
+    vec3 r = vec3( fbm( p + 4.0*q + vec3(1.7,9.2,5.5) ),
+                   fbm( p + 4.0*q + vec3(8.3,2.8,1.2) ),
+                   fbm( p + 4.0*q + vec3(15.3,12.8,7.2) ) );
+
+    return fbm( p + 4.0*r );
   }
 
   void main() {
-    vec3 pos = position;
+    vec2 uv = gl_FragCoord.xy / resolution.xy;
+    vec3 pos = texture2D(u_positions, uv).xyz;
+    vec3 vel = texture2D(u_velocities, uv).xyz;
 
-    // Multi-layered noise for organic movement
-    float time = uTime * aSpeed;
-    float noise1 = snoise(vec3(pos.x * 0.3, pos.y * 0.3, time * 0.5));
-    float noise2 = snoise(vec3(pos.x * 0.7 + 100.0, pos.y * 0.7, time * 0.3)) * 0.5;
-    float noise3 = snoise(vec3(pos.x * 1.4 + 200.0, pos.y * 1.4, time * 0.7)) * 0.25;
-    float totalNoise = noise1 + noise2 + noise3;
-
-    // Breathing effect
-    float breathe = sin(time * 2.0) * 0.1 + 1.0;
-
-    // Apply noise deformation
-    pos.xy += vec2(
-      snoise(vec3(pos.x * 0.5, pos.y * 0.5, time)) * 0.3,
-      snoise(vec3(pos.x * 0.5 + 50.0, pos.y * 0.5, time)) * 0.3
-    ) * breathe;
-
-    // Mouse interaction
-    float dist = distance(pos.xy, uMouse);
+    float dist = distance(pos.xy, u_mouse);
     float influence = 1.0 - smoothstep(0.0, 2.0, dist);
-    vec2 direction = normalize(pos.xy - uMouse);
-    pos.xy += direction * influence * 0.5 * (0.5 + totalNoise * 0.5);
+    vec2 direction = normalize(pos.xy - u_mouse);
 
-    // Z displacement for depth
-    pos.z += totalNoise * 0.4 * breathe;
+    vel.xy += direction * influence * 0.1;
 
-    vec4 modelPosition = modelMatrix * vec4(pos, 1.0);
-    vec4 viewPosition = viewMatrix * modelPosition;
-    vec4 projectedPosition = projectionMatrix * viewPosition;
-    gl_Position = projectedPosition;
+    // Add noise
+    vel.xy += vec2(
+      pattern(pos + u_time * 0.01),
+      pattern(pos + u_time * 0.01 + 100.0)
+    ) * 0.01;
 
-    // Dynamic point size
-    float sizeModifier = 1.0 + totalNoise * 0.3 + influence * 0.5;
-    gl_PointSize = uSize * aScale * uPixelRatio * sizeModifier * breathe;
-    gl_PointSize *= (1.0 / -viewPosition.z);
+    vel *= 0.99;
 
-    // Color variation
-    vec3 baseColor = vec3(0.3, 0.6, 1.0); // Cyan-blue base
-    vec3 highlightColor = vec3(0.5, 0.8, 1.0); // Lighter cyan
-    vec3 accentColor = vec3(1.0, 0.6, 0.8); // Pink accent
-
-    float colorMix = totalNoise * 0.5 + 0.5;
-    vColor = mix(baseColor, highlightColor, colorMix);
-    vColor = mix(vColor, accentColor, influence * 0.3);
-
-    // Alpha based on various factors
-    vAlpha = 0.15 + influence * 0.2 + (totalNoise * 0.5 + 0.5) * 0.1;
-    vAlpha *= breathe;
+    gl_FragColor = vec4(vel, 1.0);
   }
 `;
 
-const fragmentShader = `
-  varying vec3 vColor;
-  varying float vAlpha;
 
-  void main() {
-    // Soft circular particles
-    vec2 center = gl_PointCoord - vec2(0.5);
-    float dist = length(center);
-    float strength = 1.0 - smoothstep(0.0, 0.5, dist);
-
-    // Glow effect
-    float glow = exp(-dist * 4.0);
-
-    vec3 finalColor = vColor + vec3(glow * 0.2);
-    float finalAlpha = vAlpha * strength * (0.6 + glow * 0.4);
-
-    gl_FragColor = vec4(finalColor, finalAlpha);
-  }
-`;
-
-function Nebula() {
-  const { size, viewport } = useThree();
+function Nebula({ adaptiveQualityManager }) {
+  const { gl, size, viewport } = useThree();
   const mouse = useRef([0, 0]);
-  const uniforms = useMemo(() => ({
-    uTime: { value: 0 },
-    uMouse: { value: new THREE.Vector2(0, 0) },
-    uSize: { value: 30.0 },
-    uPixelRatio: { value: Math.min(window.devicePixelRatio, 2) }
-  }), []);
 
-  const particles = useMemo(() => {
-    const count = 3000;
-    const positions = new Float32Array(count * 3);
-    const scales = new Float32Array(count);
-    const speeds = new Float32Array(count);
+  const PARTICLE_COUNT = 100000;
+  const WIDTH = Math.sqrt(PARTICLE_COUNT);
+  const HEIGHT = Math.sqrt(PARTICLE_COUNT);
 
-    // Create circular distribution with more particles in center
-    for (let i = 0; i < count; i++) {
+  const gpuCompute = useMemo(() => {
+    const compute = new GPUComputationRenderer(WIDTH, HEIGHT, gl);
+
+    const posTexture = compute.createTexture();
+    const velTexture = compute.createTexture();
+
+    const posData = posTexture.image.data;
+    const velData = velTexture.image.data;
+
+    for (let i = 0; i < posData.length; i += 4) {
       const angle = Math.random() * Math.PI * 2;
-      const radius = Math.sqrt(Math.random()) * 5; // Square root for even distribution
+      const radius = Math.sqrt(Math.random()) * 5;
 
-      positions[i * 3] = Math.cos(angle) * radius;
-      positions[i * 3 + 1] = Math.sin(angle) * radius;
-      positions[i * 3 + 2] = (Math.random() - 0.5) * 2;
+      posData[i] = Math.cos(angle) * radius;
+      posData[i + 1] = Math.sin(angle) * radius;
+      posData[i + 2] = (Math.random() - 0.5) * 2;
+      posData[i + 3] = 1.0;
 
-      scales[i] = Math.random() * 0.8 + 0.2;
-      speeds[i] = Math.random() * 0.5 + 0.5;
+      velData[i] = 0;
+      velData[i + 1] = 0;
+      velData[i + 2] = 0;
+      velData[i + 3] = 1.0;
     }
 
-    const geo = new THREE.BufferGeometry();
-    geo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-    geo.setAttribute('aScale', new THREE.BufferAttribute(scales, 1));
-    geo.setAttribute('aSpeed', new THREE.BufferAttribute(speeds, 1));
-    return geo;
+    const positionVariable = compute.addVariable("u_positions", positionFragmentShader, posTexture);
+    const velocityVariable = compute.addVariable("u_velocities", velocityFragmentShader, velTexture);
+
+    compute.setVariableDependencies(positionVariable, [positionVariable, velocityVariable]);
+    compute.setVariableDependencies(velocityVariable, [positionVariable, velocityVariable]);
+
+    positionVariable.material.uniforms.u_time = { value: 0 };
+    velocityVariable.material.uniforms.u_time = { value: 0 };
+    velocityVariable.material.uniforms.u_mouse = { value: new THREE.Vector2(0,0) };
+
+    compute.init();
+    return compute;
+  }, [gl]);
+
+  const particles = useMemo(() => {
+    const geometry = new THREE.BufferGeometry();
+    const positions = new Float32Array(PARTICLE_COUNT * 3);
+    for (let i = 0; i < PARTICLE_COUNT; i++) {
+        positions[i * 3 + 0] = (i % WIDTH) / WIDTH;
+        positions[i * 3 + 1] = Math.floor(i / WIDTH) / HEIGHT;
+    }
+    geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+    return geometry;
   }, []);
 
+  const uniforms = useMemo(() => ({
+    u_positions: { value: null },
+    u_size: { value: 1.0 }
+  }), []);
+
   useFrame((state, delta) => {
-    uniforms.uTime.value += delta * 0.15;
+    if (adaptiveQualityManager) {
+      adaptiveQualityManager.update();
+    }
 
-    const targetMouse = new THREE.Vector2(
-      (mouse.current[0] / size.width) * 2 - 1,
-      -(mouse.current[1] / size.height) * 2 + 1
-    ).multiplyScalar(viewport.width / 2);
+    gpuCompute.variables.position.material.uniforms.u_time.value += delta;
+    gpuCompute.variables.velocity.material.uniforms.u_time.value += delta;
+    gpuCompute.variables.velocity.material.uniforms.u_mouse.value.lerp(
+        new THREE.Vector2(
+            (mouse.current[0] / size.width) * 2 - 1,
+            -(mouse.current[1] / size.height) * 2 + 1
+        ).multiplyScalar(viewport.width/2),
+        0.1
+    );
 
-    uniforms.uMouse.value.lerp(targetMouse, 0.1);
+    gpuCompute.compute();
+
+    uniforms.u_positions.value = gpuCompute.getCurrentRenderTarget(gpuCompute.variables.position).texture;
   });
 
   useEffect(() => {
@@ -195,8 +188,8 @@ function Nebula() {
     <points geometry={particles}>
       <shaderMaterial
         uniforms={uniforms}
-        vertexShader={vertexShader}
-        fragmentShader={fragmentShader}
+        vertexShader={particleRenderVertexShader}
+        fragmentShader={particleRenderFragmentShader}
         transparent
         blending={THREE.AdditiveBlending}
         depthWrite={false}
@@ -205,7 +198,9 @@ function Nebula() {
   );
 }
 
-export default function InteractiveNebula() {
+import { AdaptiveQualityManager } from './AdaptiveQualityManager.js';
+
+export default function InteractiveNebula({ adaptiveQualityManager, setAdaptiveQualityManager }) {
   return (
     <div style={{
       position: 'fixed',
@@ -219,12 +214,15 @@ export default function InteractiveNebula() {
     }}>
       <Canvas
         camera={{ position: [0, 0, 3], fov: 75 }}
-        onCreated={({ gl }) => {
+        onCreated={({ gl, scene }) => {
           gl.setClearColor('#000000', 0);
+          if (!adaptiveQualityManager) {
+            setAdaptiveQualityManager(new AdaptiveQualityManager(gl, scene));
+          }
         }}
       >
         <Suspense fallback={null}>
-          <Nebula />
+          <Nebula adaptiveQualityManager={adaptiveQualityManager} />
         </Suspense>
       </Canvas>
     </div>
