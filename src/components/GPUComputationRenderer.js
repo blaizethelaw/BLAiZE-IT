@@ -38,7 +38,11 @@ var GPUComputationRenderer = function ( sizeX, sizeY, renderer ) {
 		passThruTexture: { value: null }
 	};
 
-	function createShaderMaterial( computeFragmentShader, uniforms ) {
+        function addResolutionDefine( material ) {
+                material.defines.resolution = 'vec2( ' + sizeX.toFixed( 1 ) + ', ' + sizeY.toFixed( 1 ) + ' )';
+        }
+
+        function createShaderMaterial( computeFragmentShader, uniforms ) {
 
 		uniforms = uniforms || {};
 
@@ -50,7 +54,7 @@ var GPUComputationRenderer = function ( sizeX, sizeY, renderer ) {
 
 		} );
 
-		addResolutionDefine( material );
+                addResolutionDefine( material );
 
 		return material;
 
