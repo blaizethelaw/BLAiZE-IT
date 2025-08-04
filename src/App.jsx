@@ -47,13 +47,13 @@ body {
 const CosmicWebBackground = () => {
     const canvasRef = useRef(null);
     const particles = useRef([]);
-    const mouse = useRef({ x: null, y: null, radius: 150 });
+    const mouse = useRef({ x: null, y: null, radius: 200 });
     const running = useRef(true);
 
     // --- CONFIG ---
     const PARTICLE_COUNT = 100;
     const CONNECT_DISTANCE = 120;
-    const MOUSE_PULL_FACTOR = 0.5;
+    const MOUSE_PULL_FACTOR = 0.8;
     const PALETTE = [
         [210, 100, 70],  // Blue
         [265, 100, 73],  // Purple
@@ -65,8 +65,8 @@ const CosmicWebBackground = () => {
         constructor(x, y, dpr) {
             this.x = x;
             this.y = y;
-            this.vx = Math.random() * 0.4 - 0.2;
-            this.vy = Math.random() * 0.4 - 0.2;
+            this.vx = Math.random() * 0.2 - 0.1;
+            this.vy = Math.random() * 0.2 - 0.1;
             this.radius = (Math.random() * 1.5 + 0.5) * dpr;
             const [h, s, l] = PALETTE[Math.floor(Math.random() * PALETTE.length)];
             this.color = `hsl(${h}, ${s}%, ${l}%)`;
@@ -103,6 +103,10 @@ const CosmicWebBackground = () => {
             if (this.x > canvas.width) this.x = 0;
             if (this.y < 0) this.y = canvas.height;
             if (this.y > canvas.height) this.y = 0;
+
+            // Friction
+            this.vx *= 0.95;
+            this.vy *= 0.95;
         }
     }
 
