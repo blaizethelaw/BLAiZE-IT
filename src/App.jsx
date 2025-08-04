@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, Suspense } from "react";
 import { Menu, X, CheckCircle, XCircle, Loader2, ChevronLeft, ChevronRight } from 'lucide-react';
-import NexusNebulaCursor from './components/InteractiveNebula';
+import LivingNebulaCursor from './components/InteractiveNebula';
 
 // Utility Components
 function FadeInWhenVisible({ children, className = '', delay = 0, duration = 700 }) {
@@ -691,7 +691,7 @@ export default function App() {
       `}</style>
 
       <Suspense fallback={<div className="fixed inset-0 bg-black flex items-center justify-center text-white">Loading WebGL...</div>}>
-        <NexusNebulaCursor />
+        <LivingNebulaCursor />
       </Suspense>
 
       <Navbar currentPage={currentPage} setCurrentPage={setCurrentPage} />
