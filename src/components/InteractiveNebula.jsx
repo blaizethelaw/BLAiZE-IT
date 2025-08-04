@@ -1,150 +1,213 @@
-import React, { Suspense, useRef, useMemo, useEffect } from 'react';
-import { Canvas, useFrame, useThree } from '@react-three/fiber';
-import * as THREE from 'three';
+import React, { useRef, useEffect } from "react";
 
-const vertexShader = `
-  uniform float uTime;
-  uniform vec2 uMouse;
-  uniform float uPixelRatio;
-  uniform float uSize;
-  attribute float aScale;
-  varying vec3 vColor;
-  vec3 mod289(vec3 x) { return x - floor(x * (1.0 / 289.0)) * 289.0; }
-  vec4 mod289(vec4 x) { return x - floor(x * (1.0 / 289.0)) * 289.0; }
-  vec4 permute(vec4 x) { return mod289(((x*34.0)+1.0)*x); }
-  vec4 taylorInvSqrt(vec4 r) { return 1.79284291400159 - 0.85373472095314 * r; }
-  float snoise(vec3 v) {
-    const vec2 C = vec2(1.0/6.0, 1.0/3.0);
-    const vec4 D = vec4(0.0, 0.5, 1.0, 2.0);
-    vec3 i = floor(v + dot(v, C.yyy));
-    vec3 x0 = v - i + dot(i, C.xxx);
-    vec3 g = step(x0.yzx, x0.xyz);
-    vec3 l = 1.0 - g;
-    vec3 i1 = min(g.xyz, l.zxy);
-    vec3 i2 = max(g.xyz, l.zxy);
-    vec3 x1 = x0 - i1 + C.xxx;
-    vec3 x2 = x0 - i2 + C.yyy;
-    vec3 x3 = x0 - D.yyy;
-    i = mod289(i);
-    vec4 p = permute(permute(permute(
-              i.z + vec4(0.0, i1.z, i2.z, 1.0))
-            + i.y + vec4(0.0, i1.y, i2.y, 1.0))
-            + i.x + vec4(0.0, i1.x, i2.x, 1.0));
-    float n_ = 0.142857142857;
-    vec3 ns = n_ * D.wyz - D.xzx;
-    vec4 j = p - 49.0 * floor(p * ns.z * ns.z);
-    vec4 x_ = floor(j * ns.z);
-    vec4 y_ = floor(j - 7.0 * x_);
-    vec4 x = x_ * ns.x + ns.yyyy;
-    vec4 y = y_ * ns.x + ns.yyyy;
-    vec4 h = 1.0 - abs(x) - abs(y);
-    vec4 b0 = vec4(x.xy, y.xy);
-    vec4 b1 = vec4(x.zw, y.zw);
-    vec4 s0 = floor(b0) * 2.0 + 1.0;
-    vec4 s1 = floor(b1) * 2.0 + 1.0;
-    vec4 sh = -step(h, vec4(0.0));
-    vec4 a0 = b0.xzyw + s0.xzyw * sh.xxyy;
-    vec4 a1 = b1.xzyw + s1.xzyw * sh.zzww;
-    vec3 p0 = vec3(a0.xy, h.x);
-    vec3 p1 = vec3(a0.zw, h.y);
-    vec3 p2 = vec3(a1.xy, h.z);
-    vec3 p3 = vec3(a1.zw, h.w);
-    vec4 norm = taylorInvSqrt(vec4(dot(p0, p0), dot(p1, p1), dot(p2, p2), dot(p3, p3)));
-    p0 *= norm.x;
-    p1 *= norm.y;
-    p2 *= norm.z;
-    p3 *= norm.w;
-    vec4 m = max(0.6 - vec4(dot(x0, x0), dot(x1, x1), dot(x2, x2), dot(x3, x3)), 0.0);
-    m = m * m;
-    return 42.0 * dot(m * m, vec4(dot(p0, x0), dot(p1, x1), dot(p2, x2), dot(p3, x3)));
-  }
-  void main() {
-    vec3 pos = position;
-    float noise = snoise(vec3(pos.x * 0.5 + uTime * 0.1, pos.y * 0.5 + uTime * 0.1, uTime * 0.1));
-    pos.z += noise * 0.2;
-    float dist = distance(pos.xy, uMouse);
-    float pullFactor = 1.0 - smoothstep(0.0, 0.5, dist);
-    pos.xy = mix(pos.xy, uMouse, pullFactor * 0.1);
-    pos.z += pullFactor * 0.5;
-    vec4 modelPosition = modelMatrix * vec4(pos, 1.0);
-    vec4 viewPosition = viewMatrix * modelPosition;
-    vec4 projectedPosition = projectionMatrix * viewPosition;
-    gl_Position = projectedPosition;
-    gl_PointSize = uSize * aScale * uPixelRatio;
-    gl_PointSize *= (1.0 / -viewPosition.z);
-    vColor = vec3(0.5 + pullFactor * 0.5, 0.5 - pullFactor * 0.2, 0.8);
-    vColor = mix(vColor, vec3(1.0, 1.0, 1.0), noise * 0.5);
-  }
-`;
+// --- CONFIG ---
+const PARTICLE_CAP = 60;
+const PARTICLES_PER_FRAME = 1;
+const ORBITERS = 12;
+const NEXUS_RADIUS = 40;
+const PARTICLE_LIFESPAN = 0.8;
+const PARTICLE_MIN_SIZE = 6;
+const PARTICLE_MAX_SIZE = 16;
+const PALETTE = [
+  [210, 100, 70],  // Blue
+  [265, 100, 73],  // Purple
+  [320, 97, 65],   // Pink
+  [185, 100, 66],  // Aqua
+  [55, 95, 56]     // Yellow
+];
 
-const fragmentShader = `
-  varying vec3 vColor;
-  void main() {
-    float strength = distance(gl_PointCoord, vec2(0.5));
-    strength = 1.0 - step(0.5, strength);
-    gl_FragColor = vec4(vColor, strength * 0.5);
-  }
-`;
+const NexusNebulaCursor = () => {
+  const canvasRef = useRef(null);
+  const particles = useRef([]);
+  const mouse = useRef({ x: window.innerWidth / 2, y: window.innerHeight / 2, moved: false });
+  const running = useRef(true);
+  const time = useRef(0);
 
-function Nebula() {
-  const { size, viewport } = useThree();
-  const mouse = useRef([0, 0]);
-  const uniforms = useMemo(() => ({
-    uTime: { value: 0 },
-    uMouse: { value: new THREE.Vector2(0, 0) },
-    uSize: { value: 60.0 },
-    uPixelRatio: { value: Math.min(window.devicePixelRatio, 2) }
-  }), []);
-  const particles = useMemo(() => {
-    const count = 5000;
-    const positions = new Float32Array(count * 3);
-    const scales = new Float32Array(count);
-    for (let i = 0; i < count; i++) {
-      positions[i * 3] = (Math.random() - 0.5) * 10;
-      positions[i * 3 + 1] = (Math.random() - 0.5) * 10;
-      positions[i * 3 + 2] = (Math.random() - 0.5) * 2;
-      scales[i] = Math.random() * 0.5 + 0.5;
+  // Utility for palette cycling
+  const pickColor = () => {
+    const idx = Math.floor(Math.random() * PALETTE.length);
+    const [h, s, l] = PALETTE[idx];
+    return `hsl(${h},${s}%,${l}%)`;
+  };
+
+  // Particle class with gentle spiral
+  class Particle {
+    constructor(x, y) {
+      this.baseAngle = Math.random() * Math.PI * 2;
+      this.radius = 30 + Math.random() * 30;
+      this.angularSpeed = 0.6 + Math.random() * 0.7;
+      this.x0 = x;
+      this.y0 = y;
+      this.size = Math.random() * (PARTICLE_MAX_SIZE - PARTICLE_MIN_SIZE) + PARTICLE_MIN_SIZE;
+      this.life = 1;
+      this.color = pickColor();
+      this.age = 0;
     }
-    const geo = new THREE.BufferGeometry();
-    geo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-    geo.setAttribute('aScale', new THREE.BufferAttribute(scales, 1));
-    return geo;
-  }, []);
-  useFrame((state, delta) => {
-    uniforms.uTime.value += delta * 0.2;
-    const targetMouse = new THREE.Vector2(
-      (mouse.current[0] / size.width) * 2 - 1,
-      -(mouse.current[1] / size.height) * 2 + 1
-    ).multiplyScalar(viewport.width / 2);
-    uniforms.uMouse.value.lerp(targetMouse, 0.05);
-  });
-  useEffect(() => {
-    const handleMouseMove = (e) => { mouse.current = [e.clientX, e.clientY]; };
-    window.addEventListener('mousemove', handleMouseMove);
-    return () => window.removeEventListener('mousemove', handleMouseMove);
-  }, []);
-  return (
-    <points geometry={particles}>
-      <shaderMaterial
-        uniforms={uniforms}
-        vertexShader={vertexShader}
-        fragmentShader={fragmentShader}
-        transparent
-        blending={THREE.AdditiveBlending}
-        depthWrite={false}
-      />
-    </points>
-  );
-}
+    update(dt, t, centerX, centerY) {
+      this.age += dt;
+      this.life -= dt / PARTICLE_LIFESPAN;
+      // Swirl/orbit
+      const angle = this.baseAngle + t * this.angularSpeed + this.age * 0.8;
+      this.x = centerX + Math.cos(angle) * this.radius * (1 - (1 - this.life) * 0.35);
+      this.y = centerY + Math.sin(angle) * this.radius * (1 - (1 - this.life) * 0.35);
+      this.size *= 0.985;
+    }
+    draw(ctx, dpr) {
+      ctx.save();
+      ctx.globalAlpha = Math.max(0, this.life) * 0.34;
+      ctx.globalCompositeOperation = "lighter";
+      const grad = ctx.createRadialGradient(
+        this.x * dpr, this.y * dpr, 0,
+        this.x * dpr, this.y * dpr, this.size * dpr
+      );
+      grad.addColorStop(0, this.color);
+      grad.addColorStop(1, "rgba(0,0,0,0)");
+      ctx.beginPath();
+      ctx.arc(this.x * dpr, this.y * dpr, this.size * dpr, 0, 2 * Math.PI);
+      ctx.fillStyle = grad;
+      ctx.fill();
+      ctx.restore();
+    }
+  }
 
-export default function InteractiveNebula() {
+  // Orbiters for the animated ring
+  const drawOrbiters = (ctx, dpr, centerX, centerY, t) => {
+    for (let i = 0; i < ORBITERS; i++) {
+      const angle = (t * 0.8) + (i * ((Math.PI * 2) / ORBITERS));
+      const r = NEXUS_RADIUS + 13 + Math.sin(t * 2 + i) * 6;
+      const orbX = centerX + Math.cos(angle) * r;
+      const orbY = centerY + Math.sin(angle) * r;
+      const [h, s, l] = PALETTE[i % PALETTE.length];
+      ctx.save();
+      ctx.globalAlpha = 0.35 + 0.13 * Math.sin(t * 1.7 + i * 1.3);
+      ctx.globalCompositeOperation = "lighter";
+      ctx.beginPath();
+      ctx.arc(orbX * dpr, orbY * dpr, 7 * dpr, 0, 2 * Math.PI);
+      ctx.fillStyle = `hsl(${h},${s}%,${l}%)`;
+      ctx.shadowColor = `hsl(${h},${s}%,90%)`;
+      ctx.shadowBlur = 32 * dpr;
+      ctx.fill();
+      ctx.restore();
+    }
+  };
+
+  // Central glowing nexus
+  const drawNexus = (ctx, dpr, centerX, centerY, t) => {
+    const g = ctx.createRadialGradient(
+      centerX * dpr, centerY * dpr, 0,
+      centerX * dpr, centerY * dpr, NEXUS_RADIUS * dpr
+    );
+    g.addColorStop(0, "rgba(255,255,255,1)");
+    g.addColorStop(0.19, "rgba(255,245,236,0.75)");
+    g.addColorStop(0.6, "rgba(145,185,255,0.38)");
+    g.addColorStop(1, "rgba(55, 40, 155, 0.09)");
+
+    ctx.save();
+    ctx.globalAlpha = 0.94 + 0.05 * Math.sin(t * 2.3);
+    ctx.globalCompositeOperation = "lighter";
+    ctx.beginPath();
+    ctx.arc(centerX * dpr, centerY * dpr, NEXUS_RADIUS * dpr, 0, 2 * Math.PI);
+    ctx.fillStyle = g;
+    ctx.shadowColor = "white";
+    ctx.shadowBlur = 48 * dpr;
+    ctx.fill();
+    ctx.restore();
+  };
+
+  // Mouse movement
+  useEffect(() => {
+    const move = (e) => {
+      mouse.current.x = e.clientX;
+      mouse.current.y = e.clientY;
+      mouse.current.moved = true;
+    };
+    window.addEventListener("mousemove", move);
+    return () => window.removeEventListener("mousemove", move);
+  }, []);
+
+  // Resize
+  useEffect(() => {
+    const setSize = () => {
+      const canvas = canvasRef.current;
+      if (canvas) {
+        const dpr = window.devicePixelRatio || 1;
+        canvas.width = window.innerWidth * dpr;
+        canvas.height = window.innerHeight * dpr;
+        canvas.style.width = "100vw";
+        canvas.style.height = "100vh";
+      }
+    };
+    setSize();
+    window.addEventListener("resize", setSize);
+    return () => window.removeEventListener("resize", setSize);
+  }, []);
+
+  // Animation loop
+  useEffect(() => {
+    running.current = true;
+    let last = performance.now();
+
+    function animate(now) {
+      if (!running.current) return;
+      const dt = (now - last) / 1000;
+      last = now;
+      time.current += dt;
+      const canvas = canvasRef.current;
+      if (!canvas) return;
+      const ctx = canvas.getContext("2d");
+      const dpr = window.devicePixelRatio || 1;
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      const centerX = mouse.current.x || window.innerWidth / 2;
+      const centerY = mouse.current.y || window.innerHeight / 2;
+
+      // Draw central nexus
+      drawNexus(ctx, dpr, centerX, centerY, time.current);
+
+      // Draw orbiters
+      drawOrbiters(ctx, dpr, centerX, centerY, time.current);
+
+      // Add new nebula particles
+      if (mouse.current.moved && particles.current.length < PARTICLE_CAP) {
+        for (let i = 0; i < PARTICLES_PER_FRAME; i++) {
+          particles.current.push(new Particle(centerX, centerY));
+        }
+        mouse.current.moved = false;
+      }
+
+      // Draw/animate nebula particles
+      for (let i = particles.current.length - 1; i >= 0; i--) {
+        const p = particles.current[i];
+        p.update(dt, time.current, centerX, centerY);
+        p.draw(ctx, dpr);
+        if (p.life <= 0 || p.size < 0.5) particles.current.splice(i, 1);
+      }
+
+      requestAnimationFrame(animate);
+    }
+    requestAnimationFrame(animate);
+    return () => { running.current = false; };
+  }, []);
+
+  // No effect on touch devices (optional)
+  if (typeof window !== "undefined" && ("ontouchstart" in window || navigator.maxTouchPoints > 0)) return null;
+
   return (
-    <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', zIndex: -1, pointerEvents: 'none' }}>
-      <Canvas camera={{ position: [0, 0, 2], fov: 75 }} onCreated={({ gl }) => { gl.setClearColor('#000000', 1); }}>
-        <Suspense fallback={null}>
-          <Nebula />
-        </Suspense>
-      </Canvas>
-    </div>
+    <canvas
+      ref={canvasRef}
+      style={{
+        position: "fixed",
+        inset: 0,
+        width: "100vw",
+        height: "100vh",
+        pointerEvents: "none",
+        zIndex: 9999,
+        background: "transparent"
+      }}
+      aria-hidden="true"
+      tabIndex={-1}
+    />
   );
-}
+};
+
+export default NexusNebulaCursor;
