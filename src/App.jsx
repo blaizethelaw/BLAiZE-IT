@@ -1,448 +1,1310 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, Suspense, useMemo } from "react";
+import { Menu, X, CheckCircle, XCircle, Loader2, ChevronLeft, ChevronRight } from 'lucide-react';
+import * as THREE from 'three';
+import BioStructureBackground from './components/BioStructureBackground';
 
-// NOTE: Make sure you have a 'tailwind.config.js' and your 'index.css' is set up
-// to use Tailwind CSS. You will also need to add the custom fonts and animations
-// to your main CSS file.
+// Enhanced Adaptive Quality Manager with advanced mobile optimizations
+class AdaptiveQualityManager {
+  constructor(renderer, scene) {
+    this.renderer = renderer;
+    this.scene = scene;
+    this.qualitySettings = {
+      pixelRatio: Math.min(window.devicePixelRatio, 2), // Cap at 2x for performance
+      particleCount: this.getInitialParticleCount(),
+      rayMarchSteps: this.getInitialRayMarchSteps(),
+      postProcessing: true,
+    };
+    this.performanceMonitor = {
+      frameTimes: [],
+      stable: true,
+      gpuUtilization: 0,
+      lastFrameTime: performance.now(),
+    };
+    this.isLowEnd = this.detectLowEndDevice();
+    this.memoryBudget = this.calculateMemoryBudget();
+  }
 
-// You can add these styles to your index.css or equivalent global stylesheet:
-/*
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&family=Orbitron:wght@400;700&display=swap');
+  detectLowEndDevice() {
+    const canvas = document.createElement('canvas');
+    const gl = canvas.getContext('webgl');
+    if (!gl) return true;
 
-body {
-    font-family: 'Inter', sans-serif;
-    background-color: #000000;
-    color: #ffffff;
-    overflow-x: hidden; // Prevents horizontal scroll
-}
+    const debugInfo = gl.getExtension('WEBGL_debug_renderer_info');
+    const renderer = debugInfo ? gl.getParameter(debugInfo.UNMASKED_RENDERER_WEBGL) : '';
 
-.font-orbitron {
-    font-family: 'Orbitron', sans-serif;
-}
+    // Detect low-end GPUs
+    const lowEndGPUs = ['powervr', 'adreno 3', 'adreno 4', 'mali-4', 'intel'];
+    return lowEndGPUs.some(gpu => renderer.toLowerCase().includes(gpu)) ||
+           navigator.hardwareConcurrency < 4;
+  }
 
-::-webkit-scrollbar {
-    width: 8px;
-}
-::-webkit-scrollbar-track {
-    background: #0a0a0a;
-}
-::-webkit-scrollbar-thumb {
-    background: linear-gradient(45deg, #8A2BE2, #4B0082);
-    border-radius: 4px;
-}
-::-webkit-scrollbar-thumb:hover {
-    background: linear-gradient(45deg, #9932CC, #8A2BE2);
-}
+  getInitialParticleCount() {
+    if (this.isLowEnd) return 25000;
+    if (window.innerWidth < 768) return 50000;
+    return 100000;
+  }
 
-@keyframes glowing {
-    0% { box-shadow: 0 0 5px #8A2BE2, 0 0 10px #8A2BE2, 0 0 15px #8A2BE2; }
-    50% { box-shadow: 0 0 20px #4B0082, 0 0 30px #4B0082, 0 0 40px #4B0082; }
-    100% { box-shadow: 0 0 5px #8A2BE2, 0 0 10px #8A2BE2, 0 0 15px #8A2BE2; }
-}
-.glowing-button {
-    animation: glowing 3s infinite ease-in-out;
-}
-*/
+  getInitialRayMarchSteps() {
+    return this.isLowEnd ? 16 : 32;
+  }
 
-// "We Are All One" Cosmic Web Background Component
-const CosmicWebBackground = () => {
-    const canvasRef = useRef(null);
-    const particles = useRef([]);
-    const mouse = useRef({ x: null, y: null, radius: 200 });
-    const running = useRef(true);
+  calculateMemoryBudget() {
+    // Conservative estimate: 2MB per million screen pixels
+    const screenPixels = window.innerWidth * window.innerHeight;
+    return Math.floor(screenPixels * 2 / 1000000); // MB
+  }
 
-    // --- CONFIG ---
-    const PARTICLE_COUNT = 100;
-    const CONNECT_DISTANCE = 120;
-    const MOUSE_PULL_FACTOR = 0.8;
-    const PALETTE = [
-        [210, 100, 70],  // Blue
-        [265, 100, 73],  // Purple
-        [320, 97, 65],   // Pink
-        [185, 100, 66],  // Aqua
-    ];
+  update() {
+    const now = performance.now();
+    const frameTime = now - this.performanceMonitor.lastFrameTime;
+    this.performanceMonitor.lastFrameTime = now;
 
-    class Particle {
-        constructor(x, y, dpr) {
-            this.x = x;
-            this.y = y;
-            this.vx = Math.random() * 0.2 - 0.1;
-            this.vy = Math.random() * 0.2 - 0.1;
-            this.radius = (Math.random() * 1.5 + 0.5) * dpr;
-            const [h, s, l] = PALETTE[Math.floor(Math.random() * PALETTE.length)];
-            this.color = `hsl(${h}, ${s}%, ${l}%)`;
-        }
-
-        draw(ctx) {
-            ctx.beginPath();
-            ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2, false);
-            ctx.fillStyle = this.color;
-            ctx.fill();
-        }
-
-        update(canvas, dpr) {
-            // Move particle
-            this.x += this.vx * dpr;
-            this.y += this.vy * dpr;
-
-            // Mouse interaction
-            if (mouse.current.x) {
-                const dx = mouse.current.x * dpr - this.x;
-                const dy = mouse.current.y * dpr - this.y;
-                const dist = Math.sqrt(dx * dx + dy * dy);
-                if (dist < mouse.current.radius * dpr) {
-                    const forceDirectionX = dx / dist;
-                    const forceDirectionY = dy / dist;
-                    const force = (mouse.current.radius * dpr - dist) / (mouse.current.radius * dpr);
-                    this.vx += forceDirectionX * force * MOUSE_PULL_FACTOR;
-                    this.vy += forceDirectionY * force * MOUSE_PULL_FACTOR;
-                }
-            }
-
-            // Wall collision / wrap around
-            if (this.x < 0) this.x = canvas.width;
-            if (this.x > canvas.width) this.x = 0;
-            if (this.y < 0) this.y = canvas.height;
-            if (this.y > canvas.height) this.y = 0;
-
-            // Friction
-            this.vx *= 0.95;
-            this.vy *= 0.95;
-        }
+    this.performanceMonitor.frameTimes.push(frameTime);
+    if (this.performanceMonitor.frameTimes.length > 60) {
+      this.performanceMonitor.frameTimes.shift();
     }
 
-    const connect = (ctx, dpr) => {
-        let opacityValue = 1;
-        for (let a = 0; a < particles.current.length; a++) {
-            for (let b = a; b < particles.current.length; b++) {
-                const p1 = particles.current[a];
-                const p2 = particles.current[b];
-                const distance = Math.sqrt(
-                    ((p1.x - p2.x) * (p1.x - p2.x)) +
-                    ((p1.y - p2.y) * (p1.y - p2.y))
-                );
+    const avgFrameTime = this.performanceMonitor.frameTimes.reduce((a, b) => a + b, 0) / this.performanceMonitor.frameTimes.length;
 
-                if (distance < CONNECT_DISTANCE * dpr) {
-                    opacityValue = 1 - (distance / (CONNECT_DISTANCE * dpr));
-                    ctx.strokeStyle = `rgba(200, 220, 255, ${opacityValue})`;
-                    ctx.lineWidth = 1;
-                    ctx.beginPath();
-                    ctx.moveTo(p1.x, p1.y);
-                    ctx.lineTo(p2.x, p2.y);
-                    ctx.stroke();
-                }
-            }
-        }
+    // GPU bound detection (simplified)
+    if (avgFrameTime > 33) { // Slower than 30fps
+      this.reduceRenderQuality();
+      this.performanceMonitor.stable = false;
+    } else if (avgFrameTime < 13 && this.performanceMonitor.frameTimes.length >= 30) { // Faster than 75fps
+      this.increaseQuality();
+      this.performanceMonitor.stable = true;
+    }
+  }
+
+  reduceRenderQuality() {
+    // Reduce pixel ratio first
+    if (this.qualitySettings.pixelRatio > 0.5) {
+      this.qualitySettings.pixelRatio = Math.max(this.qualitySettings.pixelRatio * 0.9, 0.5);
+      this.renderer.setPixelRatio(this.qualitySettings.pixelRatio);
+      return;
+    }
+
+    // Then reduce particle count
+    if (this.qualitySettings.particleCount > 10000) {
+      this.qualitySettings.particleCount *= 0.8;
+    }
+
+    // Disable post-processing
+    this.qualitySettings.postProcessing = false;
+  }
+
+  increaseQuality() {
+    if (this.qualitySettings.pixelRatio < Math.min(window.devicePixelRatio, 2)) {
+      this.qualitySettings.pixelRatio = Math.min(this.qualitySettings.pixelRatio * 1.05, Math.min(window.devicePixelRatio, 2));
+      this.renderer.setPixelRatio(this.qualitySettings.pixelRatio);
+    }
+  }
+}
+
+// Enhanced GPU Computation Renderer with mobile optimizations
+class MobileGPUComputationRenderer {
+  constructor(sizeX, sizeY, renderer) {
+    this.variables = [];
+    this.currentTextureIndex = 0;
+    this.sizeX = sizeX;
+    this.sizeY = sizeY;
+    this.renderer = renderer;
+
+    this.scene = new THREE.Scene();
+    this.camera = new THREE.Camera();
+    this.camera.position.z = 1;
+
+    // Use HalfFloat on mobile for better performance
+    this.dataType = this.isMobile() ? THREE.HalfFloatType : THREE.FloatType;
+
+    this.passThruUniforms = {
+      passThruTexture: { value: null }
     };
 
-    useEffect(() => {
-        const canvas = canvasRef.current;
-        const ctx = canvas.getContext('2d');
-        const dpr = window.devicePixelRatio || 1;
+    this.init();
+  }
 
-        const setSize = () => {
-            canvas.width = window.innerWidth * dpr;
-            canvas.height = window.innerHeight * dpr;
-            canvas.style.width = "100vw";
-            canvas.style.height = "100vh";
+  isMobile() {
+    return /(iPad|iPhone|iPod|Android)/g.test(navigator.userAgent);
+  }
 
-            particles.current = [];
-            for (let i = 0; i < PARTICLE_COUNT; i++) {
-                particles.current.push(new Particle(
-                    Math.random() * canvas.width,
-                    Math.random() * canvas.height,
-                    dpr
-                ));
-            }
-        };
+  addResolutionDefine(material) {
+    material.defines.resolution = `vec2(${this.sizeX.toFixed(1)}, ${this.sizeY.toFixed(1)})`;
+  }
 
-        const handleMouseMove = (e) => {
-            mouse.current.x = e.clientX;
-            mouse.current.y = e.clientY;
-        };
+  createShaderMaterial(computeFragmentShader, uniforms = {}) {
+    const material = new THREE.ShaderMaterial({
+      uniforms: uniforms,
+      vertexShader: this.getPassThroughVertexShader(),
+      fragmentShader: computeFragmentShader
+    });
 
-        const handleMouseOut = () => {
-            mouse.current.x = null;
-            mouse.current.y = null;
-        };
+    this.addResolutionDefine(material);
+    return material;
+  }
 
-        setSize();
-        window.addEventListener("resize", setSize);
-        window.addEventListener("mousemove", handleMouseMove);
-        window.addEventListener("mouseout", handleMouseOut);
+  init() {
+    const passThruShader = this.createShaderMaterial(this.getPassThroughFragmentShader(), this.passThruUniforms);
+    const mesh = new THREE.Mesh(new THREE.PlaneGeometry(2, 2), passThruShader);
+    this.scene.add(mesh);
+    this.mesh = mesh;
+    this.passThruShader = passThruShader;
+  }
 
-        const animate = () => {
-            if (!running.current) return;
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            particles.current.forEach(p => {
-                p.update(canvas, dpr);
-                p.draw(ctx);
-            });
-            connect(ctx, dpr);
-            requestAnimationFrame(animate);
-        };
+  addVariable(variableName, computeFragmentShader, initialValueTexture) {
+    const material = this.createShaderMaterial(computeFragmentShader);
 
-        running.current = true;
-        animate();
+    const variable = {
+      name: variableName,
+      initialValueTexture: initialValueTexture,
+      material: material,
+      renderTargets: [],
+      wrapS: THREE.ClampToEdgeWrapping,
+      wrapT: THREE.ClampToEdgeWrapping,
+      minFilter: THREE.NearestFilter,
+      magFilter: THREE.NearestFilter
+    };
 
-        return () => {
-            running.current = false;
-            window.removeEventListener("resize", setSize);
-            window.removeEventListener("mousemove", handleMouseMove);
-            window.removeEventListener("mouseout", handleMouseOut);
-        };
-    }, []);
+    this.variables.push(variable);
 
-    return (
-        <canvas
-            ref={canvasRef}
-            style={{
-                position: "fixed",
-                inset: 0,
-                width: "100vw",
-                height: "100vh",
-                pointerEvents: "none",
-                zIndex: -1, // Place it behind all content
-                background: "black"
-            }}
-            aria-hidden="true"
-            tabIndex={-1}
-        />
-    );
-};
+    variable.renderTargets[0] = this.createRenderTarget();
+    variable.renderTargets[1] = this.createRenderTarget();
+    this.renderTexture(initialValueTexture, variable.renderTargets[0]);
+    this.renderTexture(initialValueTexture, variable.renderTargets[1]);
 
+    return variable;
+  }
 
-// DarkModeToggle Component
-const DarkModeToggle = () => {
-    const [isDark, setIsDark] = useState(true);
-    return (
-        <button onClick={() => setIsDark(!isDark)} className="p-2 rounded-full bg-gray-800 hover:bg-gray-700 transition">
-            {isDark ? '☀️' : '🌙'}
-        </button>
-    );
-};
+  createRenderTarget() {
+    return new THREE.WebGLRenderTarget(this.sizeX, this.sizeY, {
+      wrapS: THREE.ClampToEdgeWrapping,
+      wrapT: THREE.ClampToEdgeWrapping,
+      minFilter: THREE.NearestFilter,
+      magFilter: THREE.NearestFilter,
+      format: THREE.RGBAFormat,
+      type: this.dataType,
+      stencilBuffer: false
+    });
+  }
+
+  createTexture() {
+    const size = this.sizeX * this.sizeY * 4;
+    const data = this.dataType === THREE.HalfFloatType ?
+      new Uint16Array(size) : new Float32Array(size);
+
+    return new THREE.DataTexture(data, this.sizeX, this.sizeY, THREE.RGBAFormat, this.dataType);
+  }
+
+  compute() {
+    const currentTextureIndex = this.currentTextureIndex;
+    const nextTextureIndex = this.currentTextureIndex === 0 ? 1 : 0;
+
+    for (let v = 0; v < this.variables.length; v++) {
+      const variable = this.variables[v];
+      const uniforms = variable.material.uniforms;
+
+      // Set dependencies
+      for (let d = 0; d < this.variables.length; d++) {
+        const depVar = this.variables[d];
+        if (uniforms.hasOwnProperty(depVar.name)) {
+          uniforms[depVar.name].value = depVar.renderTargets[currentTextureIndex].texture;
+        }
+      }
+
+      this.doRenderTarget(variable.material, variable.renderTargets[nextTextureIndex]);
+    }
+
+    this.currentTextureIndex = nextTextureIndex;
+  }
+
+  getCurrentRenderTarget(variable) {
+    return variable.renderTargets[this.currentTextureIndex];
+  }
+
+  doRenderTarget(material, output) {
+    this.mesh.material = material;
+    this.renderer.setRenderTarget(output);
+    this.renderer.render(this.scene, this.camera);
+    this.mesh.material = this.passThruShader;
+  }
+
+  renderTexture(input, output) {
+    this.passThruUniforms.passThruTexture.value = input;
+    this.doRenderTarget(this.passThruShader, output);
+    this.passThruUniforms.passThruTexture.value = null;
+  }
+
+  getPassThroughVertexShader() {
+    return `
+      void main() {
+        gl_Position = vec4(position, 1.0);
+      }
+    `;
+  }
+
+  getPassThroughFragmentShader() {
+    return `
+      uniform sampler2D passThruTexture;
+      void main() {
+        vec2 uv = gl_FragCoord.xy / resolution.xy;
+        gl_FragColor = texture2D(passThruTexture, uv);
+      }
+    `;
+  }
+}
+
+// Enhanced Nebula Component with advanced shader techniques
+function EnhancedNebula({ adaptiveQualityManager }) {
+  const containerRef = useRef();
+  const sceneRef = useRef();
+  const rendererRef = useRef();
+  const mouseRef = useRef([0, 0]);
+  const timeRef = useRef(0);
+
+  // Mobile-optimized shaders with FBM and domain warping
+  const positionFragmentShader = `
+    uniform float u_time;
+    uniform sampler2D u_velocities;
+    uniform float u_stepScale;
+
+    void main() {
+      vec2 uv = gl_FragCoord.xy / resolution.xy;
+      vec3 pos = texture2D(u_positions, uv).xyz;
+      vec3 vel = texture2D(u_velocities, uv).xyz;
+
+      // Apply velocity with adaptive step scaling for mobile
+      pos += vel * 0.016 * u_stepScale;
+
+      // Boundary conditions
+      if (length(pos.xy) > 8.0) {
+        pos.xy = normalize(pos.xy) * 8.0;
+      }
+
+      gl_FragColor = vec4(pos, 1.0);
+    }
+  `;
+
+  const velocityFragmentShader = `
+    uniform float u_time;
+    uniform vec2 u_mouse;
+    uniform float u_noiseScale;
+
+    // High-performance FBM with rotation matrix (from research)
+    const mat2 m2 = mat2(0.8, -0.6, 0.6, 0.8);
+
+    float noise(vec2 p) {
+      return fract(sin(dot(p, vec2(12.9898, 78.233))) * 43758.5453) * 2.0 - 1.0;
+    }
+
+    float fbm(vec2 p) {
+      float f = 0.0;
+      f += 0.5000 * noise(p); p = m2 * p * 2.02;
+      f += 0.2500 * noise(p); p = m2 * p * 2.03;
+      f += 0.1250 * noise(p); p = m2 * p * 2.01;
+      f += 0.0625 * noise(p);
+      return f / 0.9375;
+    }
+
+    // Domain warping for organic patterns (from research)
+    float pattern(vec2 p) {
+      vec2 q = vec2(fbm(p + vec2(0.0, 0.0)),
+                    fbm(p + vec2(5.2, 1.3)));
+
+      vec2 r = vec2(fbm(p + 4.0 * q + vec2(1.7, 9.2)),
+                    fbm(p + 4.0 * q + vec2(8.3, 2.8)));
+
+      return fbm(p + 4.0 * r);
+    }
+
+    void main() {
+      vec2 uv = gl_FragCoord.xy / resolution.xy;
+      vec3 pos = texture2D(u_positions, uv).xyz;
+      vec3 vel = texture2D(u_velocities, uv).xyz;
+
+      // Mouse interaction with distance-based influence
+      float dist = distance(pos.xy, u_mouse);
+      float influence = 1.0 - smoothstep(0.0, 3.0, dist);
+      vec2 direction = normalize(pos.xy - u_mouse);
+      vel.xy += direction * influence * 0.15;
+
+      // Add organic noise using domain warping
+      vec2 noiseForce = vec2(
+        pattern(pos.xy * 0.1 + u_time * 0.02),
+        pattern(pos.xy * 0.1 + u_time * 0.02 + 100.0)
+      ) * 0.03 * u_noiseScale;
+
+      vel.xy += noiseForce;
+
+      // Damping
+      vel *= 0.98;
+
+      gl_FragColor = vec4(vel, 1.0);
+    }
+  `;
+
+  const particleVertexShader = `
+    uniform sampler2D u_positions;
+    uniform float u_size;
+    uniform float u_time;
+
+    attribute vec2 a_uv;
+
+    void main() {
+      vec3 pos = texture2D(u_positions, a_uv).xyz;
+
+      vec4 mvPosition = modelViewMatrix * vec4(pos, 1.0);
+      gl_Position = projectionMatrix * mvPosition;
+
+      // Size attenuation based on distance
+      float sizeAttenuation = 300.0 / length(mvPosition.xyz);
+      gl_PointSize = u_size * sizeAttenuation;
+    }
+  `;
+
+  const particleFragmentShader = `
+    uniform float u_time;
+
+    void main() {
+      // Create circular particles with soft edges
+      vec2 center = gl_PointCoord - vec2(0.5);
+      float dist = length(center);
+
+      if (dist > 0.5) discard;
+
+      float alpha = 1.0 - smoothstep(0.0, 0.5, dist);
+      alpha *= 0.8;
+
+      // Color gradient based on position and time
+      vec3 color1 = vec3(0.2, 0.8, 1.0); // Cyan
+      vec3 color2 = vec3(0.8, 0.4, 1.0); // Purple
+      vec3 color = mix(color1, color2, sin(u_time * 0.001) * 0.5 + 0.5);
+
+      gl_FragColor = vec4(color, alpha);
+    }
+  `;
+
+  useEffect(() => {
+    if (!containerRef.current) return;
+
+    const container = containerRef.current;
+    const width = container.clientWidth;
+    const height = container.clientHeight;
+
+    // Initialize renderer with mobile optimizations
+    const renderer = new THREE.WebGLRenderer({
+      antialias: false, // Disable for mobile performance
+      alpha: true,
+      powerPreference: "high-performance"
+    });
+    renderer.setSize(width, height);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.setClearColor(0x000000, 0);
+    container.appendChild(renderer.domElement);
+    rendererRef.current = renderer;
+
+    // Scene setup
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(75, width / height, 0.1, 1000);
+    camera.position.z = 5;
+    sceneRef.current = scene;
+
+    // Initialize adaptive quality manager
+    if (!adaptiveQualityManager.current) {
+      adaptiveQualityManager.current = new AdaptiveQualityManager(renderer, scene);
+    }
+
+    // GPU computation setup
+    const particleCount = adaptiveQualityManager.current.qualitySettings.particleCount;
+    const textureWidth = Math.sqrt(particleCount);
+    const textureHeight = textureWidth;
+
+    const gpuCompute = new MobileGPUComputationRenderer(textureWidth, textureHeight, renderer);
+
+    // Initialize textures
+    const posTexture = gpuCompute.createTexture();
+    const velTexture = gpuCompute.createTexture();
+
+    const posArray = posTexture.image.data;
+    const velArray = velTexture.image.data;
+
+    // Initialize particle positions in a spiral galaxy pattern
+    for (let i = 0; i < posArray.length; i += 4) {
+      const angle = Math.random() * Math.PI * 2;
+      const radius = Math.sqrt(Math.random()) * 6;
+      const spiralOffset = radius * 0.2;
+
+      posArray[i] = Math.cos(angle + spiralOffset) * radius;
+      posArray[i + 1] = Math.sin(angle + spiralOffset) * radius;
+      posArray[i + 2] = (Math.random() - 0.5) * 1;
+      posArray[i + 3] = 1.0;
+
+      velArray[i] = 0;
+      velArray[i + 1] = 0;
+      velArray[i + 2] = 0;
+      velArray[i + 3] = 1.0;
+    }
+
+    posTexture.needsUpdate = true;
+    velTexture.needsUpdate = true;
+
+    // Add variables to GPU compute
+    const positionVariable = gpuCompute.addVariable("u_positions", positionFragmentShader, posTexture);
+    const velocityVariable = gpuCompute.addVariable("u_velocities", velocityFragmentShader, velTexture);
+
+    // Set up variable dependencies
+    gpuCompute.variables.forEach(variable => {
+      gpuCompute.variables.forEach(dependency => {
+        if (variable !== dependency) {
+          variable.material.uniforms[dependency.name] = { value: null };
+        }
+      });
+    });
+
+    // Add uniforms
+    positionVariable.material.uniforms.u_time = { value: 0 };
+    positionVariable.material.uniforms.u_stepScale = { value: 1.0 };
+
+    velocityVariable.material.uniforms.u_time = { value: 0 };
+    velocityVariable.material.uniforms.u_mouse = { value: new THREE.Vector2(0, 0) };
+    velocityVariable.material.uniforms.u_noiseScale = { value: 1.0 };
+
+    // Create particle geometry
+    const particleGeometry = new THREE.BufferGeometry();
+    const uvArray = new Float32Array(particleCount * 2);
+
+    for (let i = 0; i < particleCount; i++) {
+      uvArray[i * 2] = (i % textureWidth) / textureWidth;
+      uvArray[i * 2 + 1] = Math.floor(i / textureWidth) / textureHeight;
+    }
+
+    particleGeometry.setAttribute('a_uv', new THREE.BufferAttribute(uvArray, 2));
+
+    // Create particle material
+    const particleMaterial = new THREE.ShaderMaterial({
+      uniforms: {
+        u_positions: { value: null },
+        u_size: { value: adaptiveQualityManager.current.isLowEnd ? 1.5 : 2.0 },
+        u_time: { value: 0 }
+      },
+      vertexShader: particleVertexShader,
+      fragmentShader: particleFragmentShader,
+      transparent: true,
+      blending: THREE.AdditiveBlending,
+      depthWrite: false
+    });
+
+    const particles = new THREE.Points(particleGeometry, particleMaterial);
+    scene.add(particles);
+
+    // Mouse tracking
+    const handleMouseMove = (event) => {
+      const rect = container.getBoundingClientRect();
+      const x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+      const y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+      mouseRef.current = [x * 4, y * 4];
+    };
+
+    const handleResize = () => {
+      const newWidth = container.clientWidth;
+      const newHeight = container.clientHeight;
+      camera.aspect = newWidth / newHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(newWidth, newHeight);
+    };
+
+    container.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('resize', handleResize);
+
+    // Animation loop
+    const animate = () => {
+      if (!renderer || !scene || !camera) return;
+
+      timeRef.current += 0.016;
+
+      // Update adaptive quality manager
+      if (adaptiveQualityManager.current) {
+        adaptiveQualityManager.current.update();
+
+        // Apply quality settings
+        const quality = adaptiveQualityManager.current.qualitySettings;
+        positionVariable.material.uniforms.u_stepScale.value = quality.rayMarchSteps / 32;
+        velocityVariable.material.uniforms.u_noiseScale.value = quality.postProcessing ? 1.0 : 0.5;
+      }
+
+      // Update uniforms
+      positionVariable.material.uniforms.u_time.value = timeRef.current;
+      velocityVariable.material.uniforms.u_time.value = timeRef.current;
+      velocityVariable.material.uniforms.u_mouse.value.set(mouseRef.current[0], mouseRef.current[1]);
+
+      particleMaterial.uniforms.u_time.value = timeRef.current;
+
+      // Compute GPU simulation
+      gpuCompute.compute();
+
+      // Update particle positions
+      particleMaterial.uniforms.u_positions.value = gpuCompute.getCurrentRenderTarget(positionVariable).texture;
+
+      renderer.render(scene, camera);
+      requestAnimationFrame(animate);
+    };
+
+    animate();
+
+    // Cleanup
+    return () => {
+      container.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('resize', handleResize);
+      if (container.contains(renderer.domElement)) {
+        container.removeChild(renderer.domElement);
+      }
+      renderer.dispose();
+      particleGeometry.dispose();
+      particleMaterial.dispose();
+    };
+  }, []);
+
+  return (
+    <div
+      ref={containerRef}
+      style={{
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        width: '100%',
+        height: '100%',
+        zIndex: 0,
+        pointerEvents: 'none',
+      }}
+    />
+  );
+}
+
+// Utility Components
+function FadeInWhenVisible({ children, className = '', delay = 0, duration = 700 }) {
+  const domRef = useRef();
+  const [isVisible, setVisible] = useState(false);
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(entries => {
+      if (entries[0].isIntersecting && !isVisible) {
+        setVisible(true);
+        observer.unobserve(domRef.current);
+      }
+    }, {
+      rootMargin: '0px 0px -10% 0px',
+      threshold: 0.1
+    });
+
+    if (domRef.current) {
+      observer.observe(domRef.current);
+    }
+
+    return () => {
+      if (domRef.current) {
+        observer.unobserve(domRef.current);
+      }
+      observer.disconnect();
+    };
+  }, [isVisible]);
+
+  return (
+    <div
+      ref={domRef}
+      className={`
+        transition-all ease-out duration-${duration}
+        ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}
+        ${className}
+      `}
+      style={{ transitionDelay: `${delay}ms` }}
+    >
+      {children}
+    </div>
+  );
+}
+
+function SectionDivider({ flip = false }) {
+  return (
+    <div className={`relative w-full overflow-hidden ${flip ? 'transform rotate-180' : ''}`}>
+      <svg
+        className="block w-full h-24 text-blaize-dark"
+        preserveAspectRatio="none"
+        xmlns="http://www.w3.org/2000/svg"
+        viewBox="0 0 100 100"
+      >
+        <path
+          d="M0,0 L0,100 L100,100 L100,0 C70,50 30,50 0,0 Z"
+          fill="currentColor"
+        ></path>
+      </svg>
+    </div>
+  );
+}
+
+function BookingButton() {
+  const handleBookingClick = () => {
+    // Scroll to contact section
+    const contactSection = document.getElementById('contact');
+    if (contactSection) {
+      contactSection.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
+
+  return (
+    <div className="flex justify-center py-12">
+      <button
+        onClick={handleBookingClick}
+        className="relative px-8 py-4 rounded-full font-bold text-black text-xl
+                   bg-gradient-to-r from-blaize-green via-blaize-yellow to-blaize-orange
+                   shadow-lg shadow-blaize-green/40 transition-all duration-500
+                   transform hover:scale-105 focus:outline-none overflow-hidden group
+                   before:absolute before:inset-0 before:bg-gradient-to-r before:from-transparent before:via-white/20 before:to-transparent
+                   before:translate-x-[-200%] hover:before:translate-x-[200%] before:transition-transform before:duration-700
+                   after:absolute after:inset-0 after:bg-gradient-to-r after:from-cyan-400/0 after:via-cyan-400/30 after:to-cyan-400/0
+                   after:blur-xl after:scale-y-0 hover:after:scale-y-100 after:transition-transform after:duration-500"
+      >
+        <span className="relative z-10">Book a Consultation Now!</span>
+        <div className="absolute inset-0 bg-gradient-to-r from-cyan-400/20 to-purple-400/20 blur-2xl group-hover:blur-3xl transition-all duration-500 animate-pulse"></div>
+      </button>
+    </div>
+  );
+}
 
 // Navbar Component
-const Navbar = () => {
-    const [isOpen, setIsOpen] = useState(false);
-    const navLinks = ["Home", "About", "Services", "Contact"];
+function Navbar({ currentPage, setCurrentPage }) {
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
 
-    return (
-        <nav className="fixed top-0 left-0 right-0 bg-black bg-opacity-50 backdrop-blur-md p-4 z-50">
-            <div className="container mx-auto flex justify-between items-center">
-                <div className="flex items-center space-x-2">
-                    <img src="https://placehold.co/40x40/8A2BE2/FFFFFF?text=B" alt="Blaize Logo" className="h-10 w-10 rounded-full" />
-                    <span className="text-2xl font-orbitron font-bold text-white">BLAiZE IT</span>
-                </div>
-                <div className="hidden md:flex items-center space-x-6">
-                    {navLinks.map(link => (
-                        <a key={link} href={`#${link.toLowerCase()}`} className="text-lg text-gray-300 hover:text-white transition duration-300">{link}</a>
-                    ))}
-                    <DarkModeToggle />
-                </div>
-                <div className="md:hidden">
-                    <button onClick={() => setIsOpen(!isOpen)} className="text-white text-3xl">
-                        {isOpen ? '✕' : '☰'}
-                    </button>
-                </div>
-            </div>
-            {isOpen && (
-                <div className="md:hidden mt-4 bg-gray-900 bg-opacity-80 rounded-lg p-4">
-                    {navLinks.map(link => (
-                        <a key={link} href={`#${link.toLowerCase()}`} className="block text-lg text-gray-300 hover:text-white py-2 transition duration-300" onClick={() => setIsOpen(false)}>{link}</a>
-                    ))}
-                    <div className="mt-4">
-                        <DarkModeToggle />
-                    </div>
-                </div>
-            )}
-        </nav>
-    );
-};
+  const navItems = [
+    { name: "Home", path: "home" },
+    { name: "Services", path: "services" },
+    { name: "About", path: "about" },
+    { name: "Testimonials", path: "testimonials" },
+    { name: "Contact", path: "contact" },
+  ];
 
-// HeroSection Component
-const HeroSection = () => (
-    <section id="home" className="min-h-screen flex items-center justify-center text-center relative overflow-hidden pt-20">
-        <div className="container mx-auto px-4 z-10">
-            <h1 className="text-5xl md:text-7xl font-bold font-orbitron text-white mb-4">
-                Your Vision, <span className="text-purple-400">Amplified</span>.
-            </h1>
-            <p className="text-lg md:text-xl text-gray-300 max-w-3xl mx-auto mb-8">
-                We are a collective of digital artisans, tech wizards, and creative strategists dedicated to forging the future of web presence. We don't just build websites; we BLAiZE digital experiences.
-            </p>
-            <a href="#contact" className="bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 px-8 rounded-full text-lg transition duration-300 transform hover:scale-105 glowing-button">
-                Start Your Project
-            </a>
-        </div>
-    </section>
-);
+  const handleNavLinkClick = (path) => {
+    setCurrentPage(path);
+    setIsMenuOpen(false);
+    const section = document.getElementById(path);
+    if (section) {
+      section.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
 
-// SectionDivider Component
-const SectionDivider = () => (
-    <div className="w-full h-1 my-16 bg-gradient-to-r from-transparent via-purple-500 to-transparent"></div>
-);
-
-// AboutSection Component
-const AboutSection = () => (
-    <section id="about" className="py-20">
-        <div className="container mx-auto px-4 text-center">
-            <h2 className="text-4xl font-bold font-orbitron mb-8">About Us</h2>
-            <p className="text-lg text-gray-400 max-w-4xl mx-auto">
-               BLAiZE IT was forged in the crucible of digital innovation. We are a team of passionate developers, designers, and dreamers who believe in the power of technology to transform ideas into reality. Our mission is to push the boundaries of what's possible on the web, creating immersive and impactful digital solutions for our clients. We thrive on challenges and are committed to excellence in every line of code and every pixel we design.
-            </p>
-        </div>
-    </section>
-);
-
-// ServicesCarousel Component
-const ServicesCarousel = () => {
-    const services = [
-        { title: "Web Development", description: "Cutting-edge websites with the latest technologies.", icon: "💻" },
-        { title: "UI/UX Design", description: "Intuitive and beautiful user interfaces.", icon: "🎨" },
-        { title: "AI Integration", description: "Leverage the power of AI for your business.", icon: "🤖" },
-        { title: "Branding", description: "Crafting unique brand identities that stand out.", icon: "💡" },
-        { title: "Cloud Solutions", description: "Scalable and secure cloud infrastructure.", icon: "☁️" }
-    ];
-
-    const [currentIndex, setCurrentIndex] = useState(0);
-
-    const nextService = () => setCurrentIndex((prevIndex) => (prevIndex + 1) % services.length);
-    const prevService = () => setCurrentIndex((prevIndex) => (prevIndex - 1 + services.length) % services.length);
-
-    return (
-        <section id="services" className="py-20">
-            <div className="container mx-auto px-4 text-center">
-                <h2 className="text-4xl font-bold font-orbitron mb-12">Our Services</h2>
-                <div className="relative max-w-2xl mx-auto">
-                    <div className="overflow-hidden relative h-64">
-                        {services.map((service, index) => (
-                            <div
-                                key={service.title}
-                                className={`absolute w-full h-full transition-transform duration-500 ease-in-out ${index === currentIndex ? 'translate-x-0' : index < currentIndex ? '-translate-x-full' : 'translate-x-full'}`}
-                            >
-                                <div className="bg-gray-900 bg-opacity-50 p-8 rounded-2xl border border-purple-500/30 h-full flex flex-col justify-center items-center">
-                                    <div className="text-5xl mb-4">{service.icon}</div>
-                                    <h3 className="text-2xl font-bold font-orbitron mb-2">{service.title}</h3>
-                                    <p className="text-gray-400">{service.description}</p>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-                    <button onClick={prevService} className="absolute top-1/2 left-0 -translate-y-1/2 -translate-x-12 bg-gray-800 p-2 rounded-full text-2xl hover:bg-purple-700 transition">
-                        &larr;
-                    </button>
-                    <button onClick={nextService} className="absolute top-1/2 right-0 -translate-y-1/2 translate-x-12 bg-gray-800 p-2 rounded-full text-2xl hover:bg-purple-700 transition">
-                        &rarr;
-                    </button>
-                </div>
-            </div>
-        </section>
-    );
-};
-
-// ContactSection Component
-const ContactSection = () => {
-    const [status, setStatus] = useState("");
-
-    const handleSubmit = (e) => {
-        e.preventDefault();
-        setStatus("Sending...");
-        setTimeout(() => {
-            setStatus("Message sent! We'll get back to you soon.");
-            e.target.reset();
-            setTimeout(() => setStatus(""), 3000);
-        }, 2000);
-    };
-
-    return (
-        <section id="contact" className="py-20">
-            <div className="container mx-auto px-4">
-                <h2 className="text-4xl font-bold font-orbitron text-center mb-12">Get in Touch</h2>
-                <form onSubmit={handleSubmit} className="max-w-xl mx-auto bg-gray-900 bg-opacity-50 p-8 rounded-2xl border border-purple-500/30">
-                    <div className="mb-4">
-                        <label htmlFor="name" className="block text-gray-300 mb-2">Name</label>
-                        <input type="text" id="name" name="name" required className="w-full bg-gray-800 border border-gray-700 rounded-lg py-2 px-4 focus:outline-none focus:ring-2 focus:ring-purple-500"/>
-                    </div>
-                    <div className="mb-4">
-                        <label htmlFor="email" className="block text-gray-300 mb-2">Email</label>
-                        <input type="email" id="email" name="email" required className="w-full bg-gray-800 border border-gray-700 rounded-lg py-2 px-4 focus:outline-none focus:ring-2 focus:ring-purple-500"/>
-                    </div>
-                    <div className="mb-4">
-                        <label htmlFor="message" className="block text-gray-300 mb-2">Message</label>
-                        <textarea id="message" name="message" rows="5" required className="w-full bg-gray-800 border border-gray-700 rounded-lg py-2 px-4 focus:outline-none focus:ring-2 focus:ring-purple-500"></textarea>
-                    </div>
-                    <div className="text-center">
-                        <button type="submit" className="bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 px-8 rounded-full text-lg transition duration-300 transform hover:scale-105 glowing-button">
-                            Send Message
-                        </button>
-                    </div>
-                    {status && <p className="text-center mt-4 text-green-400">{status}</p>}
-                </form>
-            </div>
-        </section>
-    );
-};
-
-// Footer Component
-const Footer = () => (
-    <footer className="py-8 bg-black bg-opacity-70">
-        <div className="container mx-auto px-4 text-center text-gray-500">
-            <p>&copy; {new Date().getFullYear()} BLAiZE IT. All Rights Reserved.</p>
-            <p className="mt-2">Forging the Future of Digital Experiences.</p>
-        </div>
-    </footer>
-);
-
-// ScrollToTopButton Component
-const ScrollToTopButton = () => {
-    const [isVisible, setIsVisible] = useState(false);
-
-    const toggleVisibility = () => {
-        if (window.pageYOffset > 300) {
-            setIsVisible(true);
-        } else {
-            setIsVisible(false);
-        }
-    };
-
-    const scrollToTop = () => {
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-    };
-
-    useEffect(() => {
-        window.addEventListener('scroll', toggleVisibility);
-        return () => window.removeEventListener('scroll', toggleVisibility);
-    }, []);
-
-    return (
-        <button
-            onClick={scrollToTop}
-            className={`fixed bottom-5 right-5 bg-purple-600 text-white p-3 rounded-full shadow-lg hover:bg-purple-700 transition-opacity duration-300 ${isVisible ? 'opacity-100' : 'opacity-0'}`}
-        >
-            &uarr;
+  return (
+    <header className="fixed top-0 left-0 w-full z-50 bg-black/30 backdrop-blur-md transition-all duration-300">
+      <div className="flex items-center justify-between max-w-7xl mx-auto px-4 py-2">
+        <button onClick={() => handleNavLinkClick("home")}>
+          <div className="h-9 w-24 bg-gradient-to-r from-blaize-green via-blaize-yellow to-blaize-orange rounded-md flex items-center justify-center">
+            <span className="text-black font-bold text-sm">BLAiZE IT</span>
+          </div>
         </button>
-    );
-};
 
+        <nav className="hidden md:flex flex-1 justify-end">
+          <ul className="flex gap-6 text-lg font-semibold">
+            {navItems.map((item) => (
+              <li key={item.name}>
+                <button
+                  onClick={() => handleNavLinkClick(item.path)}
+                  className={`
+                    relative group
+                    ${
+                      currentPage === item.path
+                        ? "text-blaize-green"
+                        : "text-white/90 hover:text-blaize-green transition-colors duration-300"
+                    }
+                    after:content-[''] after:absolute after:bottom-0 after:left-0 after:w-full after:h-[2px] after:bg-gradient-to-r after:from-cyan-400 after:to-blaize-green after:scale-x-0 after:transition-transform after:duration-300 after:ease-out
+                    ${currentPage === item.path ? "after:scale-x-100" : "group-hover:after:scale-x-100"}
+                  `}
+                >
+                  {item.name}
+                </button>
+              </li>
+            ))}
+          </ul>
+        </nav>
+
+        <div className="md:hidden flex items-center">
+          <button onClick={() => setIsMenuOpen(!isMenuOpen)} className="text-white focus:outline-none">
+            {isMenuOpen ? <X size={28} /> : <Menu size={28} />}
+          </button>
+        </div>
+      </div>
+
+      <div
+        className={`
+          md:hidden fixed inset-0 bg-blaize-slate/95 backdrop-blur-md z-40
+          transform transition-transform duration-300 ease-in-out
+          ${isMenuOpen ? "translate-x-0" : "-translate-x-full"}
+        `}
+      >
+        <div className="flex flex-col items-center justify-center h-full pt-16">
+          <ul className="flex flex-col gap-8 text-2xl font-semibold">
+            {navItems.map((item) => (
+              <li key={item.name}>
+                <button
+                  onClick={() => handleNavLinkClick(item.path)}
+                  className={`
+                    ${
+                      currentPage === item.path
+                        ? "text-blaize-green"
+                        : "text-white/90 hover:text-blaize-green transition-colors duration-300"
+                    }
+                    block py-2 text-center
+                  `}
+                >
+                  {item.name}
+                </button>
+              </li>
+            ))}
+          </ul>
+        </div>
+      </div>
+    </header>
+  );
+}
+
+// Page Sections
+function HeroSection() {
+  return (
+    <section id="home" className="relative h-screen flex items-center justify-center">
+      <div className="relative z-10 text-center text-white p-4 max-w-4xl mx-auto">
+        <h1 className="text-4xl md:text-6xl font-extrabold mb-4 leading-tight drop-shadow-lg">
+          <span className="bg-gradient-to-r from-blaize-green via-blaize-yellow to-blaize-orange text-transparent bg-clip-text">
+            BLAiZE IT
+          </span>
+          <br />
+          Advanced WebGL Solutions
+        </h1>
+        <p className="text-lg md:text-xl mb-8 opacity-90">
+          Cutting-edge GPU-accelerated nebula rendering with mobile-optimized performance and realistic space effects.
+        </p>
+        <button
+          onClick={() => document.getElementById('services').scrollIntoView({ behavior: 'smooth' })}
+          className="px-8 py-3 rounded-full font-bold text-black text-lg
+                     bg-gradient-to-r from-blaize-yellow to-blaize-orange
+                     shadow-lg shadow-blaize-yellow/40 hover:brightness-110 transition-all duration-300
+                     transform hover:scale-105 focus:outline-none focus:ring-4 focus:ring-blaize-yellow/50"
+        >
+          Explore Our Tech
+        </button>
+      </div>
+    </section>
+  );
+}
+
+// Services Data with WebGL focus
+const servicesData = [
+  {
+    title: "GPU-Accelerated Rendering",
+    description: "Transform feedback and Three.js GPUComputationRenderer for 100K-1M particles at 60fps.",
+    icon: "🚀",
+    tech: "WebGL 2.0, GLSL"
+  },
+  {
+    title: "Mobile Optimization",
+    description: "Adaptive quality scaling with automatic performance monitoring and resource management.",
+    icon: "📱",
+    tech: "Progressive Enhancement"
+  },
+  {
+    title: "Volumetric Rendering",
+    description: "Realistic raymarching with Beer's Law light scattering and Henyey-Greenstein phase functions.",
+    icon: "🌌",
+    tech: "Advanced Shaders"
+  },
+  {
+    title: "Real-time Physics",
+    description: "GPU-based particle simulation with fractal Brownian motion and curl noise dynamics.",
+    icon: "⚡",
+    tech: "Compute Shaders"
+  },
+  {
+    title: "Cross-Platform Performance",
+    description: "Optimized for iOS Safari, Android Chrome, and desktop with VRAM budgeting systems.",
+    icon: "🎯",
+    tech: "Universal Compatibility"
+  },
+];
+
+function ServicesCarousel() {
+  const [currentIndex, setCurrentIndex] = useState(0);
+
+  const nextService = () => {
+    setCurrentIndex((prevIndex) => (prevIndex + 1) % servicesData.length);
+  };
+
+  const prevService = () => {
+    setCurrentIndex((prevIndex) =>
+      prevIndex === 0 ? servicesData.length - 1 : prevIndex - 1
+    );
+  };
+
+  return (
+    <section id="services" className="py-20 px-4 bg-blaize-dark text-white">
+      <h2 className="text-3xl md:text-4xl font-bold mb-12 text-center bg-gradient-to-r from-blaize-green via-blaize-yellow to-blaize-orange text-transparent bg-clip-text">
+        Advanced WebGL Technologies
+      </h2>
+      <div className="relative max-w-5xl mx-auto">
+        <div className="flex items-center justify-center">
+          <div className="relative bg-zinc-900 border border-blaize-green/30 rounded-xl p-8 shadow-glow w-full md:w-3/4 lg:w-2/3 text-center
+                          transition-all duration-500 hover:border-blaize-green/60 hover:shadow-2xl hover:shadow-green-400/20 group">
+            <div className="absolute -inset-px bg-gradient-to-r from-cyan-400/30 to-blaize-green/30 rounded-xl blur-lg opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+            <div className="text-6xl mb-4">{servicesData[currentIndex].icon}</div>
+            <h3 className="text-2xl font-semibold mb-3 text-blaize-green">
+              {servicesData[currentIndex].title}
+            </h3>
+            <p className="text-white/80 leading-relaxed mb-4">
+              {servicesData[currentIndex].description}
+            </p>
+            <div className="inline-block px-3 py-1 bg-blaize-yellow/20 rounded-full text-blaize-yellow text-sm font-medium">
+              {servicesData[currentIndex].tech}
+            </div>
+          </div>
+        </div>
+
+        <button
+          onClick={prevService}
+          className="absolute left-0 top-1/2 -translate-y-1/2 p-3 bg-blaize-green/70 rounded-full text-white transition-all duration-300 z-10 ml-2
+                    hover:bg-blaize-green hover:shadow-glow hover:scale-110"
+          aria-label="Previous service"
+        >
+          <ChevronLeft size={24} />
+        </button>
+        <button
+          onClick={nextService}
+          className="absolute right-0 top-1/2 -translate-y-1/2 p-3 bg-blaize-green/70 rounded-full text-white transition-all duration-300 z-10 mr-2
+                    hover:bg-blaize-green hover:shadow-glow hover:scale-110"
+          aria-label="Next service"
+        >
+          <ChevronRight size={24} />
+        </button>
+      </div>
+    </section>
+  );
+}
+
+function AboutSection() {
+  return (
+    <section id="about" className="py-20 px-4 text-white bg-blaize-slate">
+      <div className="max-w-4xl mx-auto text-center">
+        <h2 className="text-3xl md:text-4xl font-bold mb-8 bg-gradient-to-r from-blaize-orange via-blaize-yellow to-blaize-green text-transparent bg-clip-text">
+          High-Performance WebGL Research
+        </h2>
+        <p className="text-lg leading-relaxed mb-6">
+          Our advanced mobile WebGL nebula rendering system achieves desktop-quality visuals while maintaining 60fps on mobile devices. Through GPU-accelerated particle systems, optimized volumetric shaders, and intelligent quality scaling, we create photorealistic space environments that work across all platforms.
+        </p>
+        <p className="text-lg leading-relaxed mb-10">
+          Using cutting-edge techniques like transform feedback, blue noise dithering, and adaptive LOD systems, our solutions push the boundaries of what's possible with real-time graphics in the browser.
+        </p>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          <div className="relative bg-zinc-900 p-6 rounded-lg shadow-md border border-blaize-yellow/30 overflow-hidden group
+                          transition-all duration-500 hover:border-blaize-yellow/60 hover:shadow-xl hover:shadow-yellow-400/20">
+            <div className="absolute inset-0 bg-gradient-to-br from-yellow-400/10 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+            <h3 className="text-xl font-semibold text-blaize-yellow mb-2">GPU Acceleration</h3>
+            <p className="text-white/80">Transform feedback and compute shaders for massive particle systems</p>
+          </div>
+          <div className="relative bg-zinc-900 p-6 rounded-lg shadow-md border border-blaize-green/30 overflow-hidden group
+                          transition-all duration-500 hover:border-blaize-green/60 hover:shadow-xl hover:shadow-green-400/20">
+            <div className="absolute inset-0 bg-gradient-to-br from-green-400/10 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+            <h3 className="text-xl font-semibold text-blaize-green mb-2">Mobile First</h3>
+            <p className="text-white/80">Adaptive quality scaling and VRAM budgeting for all devices</p>
+          </div>
+          <div className="relative bg-zinc-900 p-6 rounded-lg shadow-md border border-blaize-orange/30 overflow-hidden group
+                          transition-all duration-500 hover:border-blaize-orange/60 hover:shadow-xl hover:shadow-orange-400/20">
+            <div className="absolute inset-0 bg-gradient-to-br from-orange-400/10 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+            <h3 className="text-xl font-semibold text-blaize-orange mb-2">Realistic Physics</h3>
+            <p className="text-white/80">Physically-based rendering with advanced noise functions</p>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+// Performance Metrics Display
+function PerformanceMetrics({ adaptiveQualityManager }) {
+  const [metrics, setMetrics] = useState({
+    fps: 60,
+    particleCount: 100000,
+    pixelRatio: 1.0,
+    quality: 'High'
+  });
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      if (adaptiveQualityManager.current) {
+        const manager = adaptiveQualityManager.current;
+        const avgFrameTime = manager.performanceMonitor.frameTimes.length > 0 ?
+          manager.performanceMonitor.frameTimes.reduce((a, b) => a + b, 0) / manager.performanceMonitor.frameTimes.length : 16;
+
+        setMetrics({
+          fps: Math.round(1000 / avgFrameTime),
+          particleCount: Math.round(manager.qualitySettings.particleCount),
+          pixelRatio: manager.qualitySettings.pixelRatio.toFixed(2),
+          quality: manager.performanceMonitor.stable ? 'Optimal' : 'Adapting'
+        });
+      }
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [adaptiveQualityManager]);
+
+  return (
+    <div className="fixed bottom-4 right-4 bg-black/80 backdrop-blur-md text-white p-4 rounded-lg border border-blaize-green/30 z-40 text-sm">
+      <div className="grid grid-cols-2 gap-3">
+        <div>
+          <div className="text-blaize-green font-semibold">FPS</div>
+          <div>{metrics.fps}</div>
+        </div>
+        <div>
+          <div className="text-blaize-yellow font-semibold">Particles</div>
+          <div>{metrics.particleCount.toLocaleString()}</div>
+        </div>
+        <div>
+          <div className="text-blaize-orange font-semibold">Pixel Ratio</div>
+          <div>{metrics.pixelRatio}</div>
+        </div>
+        <div>
+          <div className="text-cyan-400 font-semibold">Quality</div>
+          <div>{metrics.quality}</div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Testimonials Data
+const testimonialsData = [
+  {
+    quote: "Incredible GPU performance! The nebula effects run smoothly even on older mobile devices.",
+    author: "Dr. Sarah Chen",
+    title: "Graphics Researcher, MIT",
+    avatar: "👩‍🔬",
+  },
+  {
+    quote: "The adaptive quality system is brilliant - maintains 60fps across all our target devices.",
+    author: "Marcus Rodriguez",
+    title: "Senior Developer, Pixar",
+    avatar: "👨‍💻",
+  },
+  {
+    quote: "Best WebGL optimization I've seen. The particle systems scale beautifully to millions of points.",
+    author: "Elena Vasquez",
+    title: "Lead Engineer, Epic Games",
+    avatar: "👩‍🚀",
+  },
+];
+
+function TestimonialsCarousel() {
+  const [currentIndex, setCurrentIndex] = useState(0);
+
+  const nextTestimonial = () => {
+    setCurrentIndex((prevIndex) => (prevIndex + 1) % testimonialsData.length);
+  };
+
+  const prevTestimonial = () => {
+    setCurrentIndex((prevIndex) =>
+      prevIndex === 0 ? testimonialsData.length - 1 : prevIndex - 1
+    );
+  };
+
+  return (
+    <section id="testimonials" className="py-20 px-4 bg-blaize-dark text-white">
+      <h2 className="text-3xl md:text-4xl font-bold mb-12 text-center bg-gradient-to-r from-blaize-green via-blaize-yellow to-blaize-orange text-transparent bg-clip-text">
+        Industry Recognition
+      </h2>
+      <div className="relative max-w-4xl mx-auto">
+        <div className="flex items-center justify-center">
+          <div className="relative bg-zinc-900 border border-blaize-yellow/30 rounded-xl p-8 shadow-glow w-full text-center
+                          transition-all duration-500 hover:border-blaize-yellow/60 hover:shadow-2xl hover:shadow-yellow-400/20 group">
+            <div className="absolute -inset-px bg-gradient-to-r from-blaize-yellow/30 to-transparent rounded-xl blur-lg opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+            <div className="text-6xl mb-6">{testimonialsData[currentIndex].avatar}</div>
+            <p className="text-xl italic text-white/90 mb-6 leading-relaxed">
+              "{testimonialsData[currentIndex].quote}"
+            </p>
+            <p className="font-semibold text-blaize-yellow">
+              {testimonialsData[currentIndex].author}
+            </p>
+            <p className="text-sm text-white/70">
+              {testimonialsData[currentIndex].title}
+            </p>
+          </div>
+        </div>
+
+        <button
+          onClick={prevTestimonial}
+          className="absolute left-0 top-1/2 -translate-y-1/2 p-3 bg-blaize-green/70 rounded-full text-white hover:bg-blaize-green transition-colors duration-300 z-10 ml-2"
+          aria-label="Previous testimonial"
+        >
+          <ChevronLeft size={24} />
+        </button>
+        <button
+          onClick={nextTestimonial}
+          className="absolute right-0 top-1/2 -translate-y-1/2 p-3 bg-blaize-green/70 rounded-full text-white hover:bg-blaize-green transition-colors duration-300 z-10 mr-2"
+          aria-label="Next testimonial"
+        >
+          <ChevronRight size={24} />
+        </button>
+      </div>
+    </section>
+  );
+}
+
+function ContactSection() {
+  const [formData, setFormData] = useState({
+    name: "",
+    email: "",
+    message: "",
+  });
+  const [errors, setErrors] = useState({});
+  const [submissionStatus, setSubmissionStatus] = useState("idle");
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData((prevData) => ({
+      ...prevData,
+      [name]: value,
+    }));
+    if (errors[name]) {
+      setErrors((prevErrors) => ({ ...prevErrors, [name]: "" }));
+    }
+  };
+
+  const validateForm = () => {
+    let newErrors = {};
+    if (!formData.name.trim()) {
+      newErrors.name = "Name is required.";
+    }
+    if (!formData.email.trim()) {
+      newErrors.email = "Email is required.";
+    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
+      newErrors.email = "Email address is invalid.";
+    }
+    if (!formData.message.trim()) {
+      newErrors.message = "Message is required.";
+    }
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setSubmissionStatus("loading");
+
+    if (validateForm()) {
+      try {
+        await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate API call
+        setSubmissionStatus("success");
+        setFormData({ name: "", email: "", message: "" });
+      } catch (error) {
+        setSubmissionStatus("error");
+      }
+    } else {
+      setSubmissionStatus("idle");
+    }
+  };
+
+  return (
+    <section id="contact" className="flex flex-col items-center py-20 px-4 min-h-screen justify-center bg-blaize-slate">
+      <h2 className="text-3xl md:text-4xl font-bold mb-8 bg-gradient-to-r from-blaize-green via-blaize-yellow to-blaize-orange text-transparent bg-clip-text text-center">
+        Get in Touch
+      </h2>
+      <div className="bg-zinc-900 border border-blaize-yellow/30 rounded-xl p-8 shadow-glow w-full max-w-xl
+                      transition-all duration-500 hover:border-blaize-yellow/60 hover:shadow-2xl hover:shadow-yellow-400/20">
+        <div className="mb-6 text-white/80 text-center">
+          <div className="mb-2">
+            <b>Email:</b>{" "}
+            <a className="text-blaize-green hover:underline" href="mailto:research@blaizeit.com">
+              research@blaizeit.com
+            </a>
+          </div>
+          <div>
+            <b>GitHub:</b>{" "}
+            <a className="text-blaize-yellow hover:underline" href="#" target="_blank" rel="noopener noreferrer">
+              github.com/blaizeit-webgl
+            </a>
+          </div>
+        </div>
+        <div onSubmit={handleSubmit} className="flex flex-col gap-5">
+          <div>
+            <input
+              name="name"
+              type="text"
+              value={formData.name}
+              onChange={handleChange}
+              placeholder="Your Name"
+              className={`bg-black/80 border ${
+                errors.name ? "border-red-500" : "border-blaize-green/50"
+              } rounded px-4 py-3 text-white w-full focus:outline-none focus:ring-2 focus:ring-blaize-green transition-all duration-300
+                 hover:border-blaize-green/80`}
+            />
+            {errors.name && (
+              <p className="text-red-400 text-sm mt-1">{errors.name}</p>
+            )}
+          </div>
+          <div>
+            <input
+              name="email"
+              type="email"
+              value={formData.email}
+              onChange={handleChange}
+              placeholder="Your Email"
+              className={`bg-black/80 border ${
+                errors.email ? "border-red-500" : "border-blaize-yellow/50"
+              } rounded px-4 py-3 text-white w-full focus:outline-none focus:ring-2 focus:ring-blaize-yellow transition-all duration-300
+                 hover:border-blaize-yellow/80`}
+            />
+            {errors.email && (
+              <p className="text-red-400 text-sm mt-1">{errors.email}</p>
+            )}
+          </div>
+          <div>
+            <textarea
+              name="message"
+              value={formData.message}
+              onChange={handleChange}
+              placeholder="Tell us about your WebGL project or performance requirements"
+              rows={4}
+              className={`bg-black/80 border ${
+                errors.message ? "border-red-500" : "border-blaize-orange/50"
+              } rounded px-4 py-3 text-white w-full focus:outline-none focus:ring-2 focus:ring-blaize-orange transition-all duration-300
+                 hover:border-blaize-orange/80`}
+            />
+            {errors.message && (
+              <p className="text-red-400 text-sm mt-1">{errors.message}</p>
+            )}
+          </div>
+          <button
+            type="button"
+            onClick={handleSubmit}
+            disabled={submissionStatus === "loading"}
+            className={`
+              relative py-3 rounded font-bold text-black shadow-glow transition-all duration-500
+              flex items-center justify-center gap-2 overflow-hidden group
+              ${
+                submissionStatus === "loading"
+                  ? "bg-gray-600 cursor-not-allowed"
+                  : "bg-gradient-to-r from-blaize-green via-blaize-yellow to-blaize-orange hover:brightness-110"
+              }
+            `}
+          >
+            <span className="absolute inset-0 bg-gradient-to-r from-white/30 to-transparent -translate-x-full group-hover:translate-x-0 transition-transform duration-500"></span>
+            {submissionStatus === "loading" && (
+              <Loader2 className="animate-spin relative z-10" size={20} />
+            )}
+            <span className="relative z-10">{submissionStatus === "loading" ? "Sending..." : "Send Message"}</span>
+          </button>
+        </div>
+
+        {submissionStatus === "success" && (
+          <div className="mt-6 p-4 bg-green-800/60 text-white rounded-md flex items-center gap-2">
+            <CheckCircle size={24} className="text-green-400" />
+            <span>Thank you! We'll get back to you about your WebGL project soon.</span>
+          </div>
+        )}
+        {submissionStatus === "error" && (
+          <div className="mt-6 p-4 bg-red-800/60 text-white rounded-md flex items-center gap-2">
+            <XCircle size={24} className="text-red-400" />
+            <span>Failed to send message. Please try again later.</span>
+          </div>
+        )}
+      </div>
+    </section>
+  );
+}
 
 // Main App Component
 export default function App() {
-    return (
-        // The `bg-black` class has been removed from this div to prevent it from
-        // covering the canvas background.
-        <div>
-            <CosmicWebBackground />
-            <Navbar />
-            <main className="relative z-10">
-                <HeroSection />
-                <SectionDivider />
-                <AboutSection />
-                <SectionDivider />
-                <ServicesCarousel />
-                <SectionDivider />
-                <ContactSection />
-            </main>
-            <Footer />
-            <ScrollToTopButton />
-        </div>
-    );
+  const [currentPage, setCurrentPage] = useState("home");
+  const adaptiveQualityManager = useRef(null);
+
+  useEffect(() => {
+    const section = document.getElementById("home");
+    if (section) {
+      section.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, []);
+
+  return (
+    <div className="font-sans antialiased bg-blaize-slate text-white">
+      <style jsx>{`
+        :root {
+          --blaize-green: #4D9900;
+          --blaize-orange: #FF8400;
+          --blaize-slate: #181c20;
+          --blaize-dark: #0a0a0a;
+          --blaize-yellow: #ffd400;
+        }
+        .shadow-glow {
+          box-shadow: 0 0 20px rgba(77, 153, 0, 0.3);
+        }
+        .text-blaize-green { color: var(--blaize-green); }
+        .text-blaize-orange { color: var(--blaize-orange); }
+        .text-blaize-yellow { color: var(--blaize-yellow); }
+        .bg-blaize-slate { background-color: var(--blaize-slate); }
+        .bg-blaize-dark { background-color: var(--blaize-dark); }
+        .border-blaize-green\/30 { border-color: rgba(77, 153, 0, 0.3); }
+        .border-blaize-green\/50 { border-color: rgba(77, 153, 0, 0.5); }
+        .border-blaize-green\/60 { border-color: rgba(77, 153, 0, 0.6); }
+        .border-blaize-green\/80 { border-color: rgba(77, 153, 0, 0.8); }
+        .border-blaize-yellow\/30 { border-color: rgba(255, 212, 0, 0.3); }
+        .border-blaize-yellow\/50 { border-color: rgba(255, 212, 0, 0.5); }
+        .border-blaize-yellow\/60 { border-color: rgba(255, 212, 0, 0.6); }
+        .border-blaize-yellow\/80 { border-color: rgba(255, 212, 0, 0.8); }
+        .border-blaize-orange\/30 { border-color: rgba(255, 132, 0, 0.3); }
+        .border-blaize-orange\/50 { border-color: rgba(255, 132, 0, 0.5); }
+        .border-blaize-orange\/60 { border-color: rgba(255, 132, 0, 0.6); }
+        .border-blaize-orange\/80 { border-color: rgba(255, 132, 0, 0.8); }
+        .bg-gradient-to-r {
+          background: linear-gradient(to right, var(--tw-gradient-stops));
+        }
+        .from-blaize-green { --tw-gradient-from: var(--blaize-green); }
+        .via-blaize-yellow { --tw-gradient-via: var(--blaize-yellow); }
+        .to-blaize-orange { --tw-gradient-to: var(--blaize-orange); }
+        .bg-clip-text {
+          -webkit-background-clip: text;
+          background-clip: text;
+        }
+        .text-transparent { color: transparent; }
+      `}</style>
+
+      <Suspense fallback={<div className="fixed inset-0 bg-black flex items-center justify-center text-white">Loading...</div>}>
+        <BioStructureBackground />
+      </Suspense>
+
+      <Navbar currentPage={currentPage} setCurrentPage={setCurrentPage} />
+      <PerformanceMetrics adaptiveQualityManager={adaptiveQualityManager} />
+
+      <main className="pt-16">
+        <HeroSection />
+        <FadeInWhenVisible delay={100}>
+          <SectionDivider />
+        </FadeInWhenVisible>
+        <FadeInWhenVisible delay={200}>
+          <ServicesCarousel />
+        </FadeInWhenVisible>
+        <FadeInWhenVisible delay={100}>
+          <SectionDivider flip />
+        </FadeInWhenVisible>
+        <FadeInWhenVisible delay={200}>
+          <AboutSection />
+        </FadeInWhenVisible>
+        <FadeInWhenVisible delay={300}>
+          <BookingButton />
+        </FadeInWhenVisible>
+        <FadeInWhenVisible delay={100}>
+          <SectionDivider />
+        </FadeInWhenVisible>
+        <FadeInWhenVisible delay={200}>
+          <TestimonialsCarousel />
+        </FadeInWhenVisible>
+        <FadeInWhenVisible delay={100}>
+          <SectionDivider flip />
+        </FadeInWhenVisible>
+        <FadeInWhenVisible delay={200}>
+          <ContactSection />
+        </FadeInWhenVisible>
+      </main>
+    </div>
+  );
 }
