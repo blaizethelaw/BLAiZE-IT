@@ -6,9 +6,7 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "test": "jest",
-    "fetch-logo": "node scripts/fetch-logo.js",
-    "postinstall": "npm run fetch-logo"
+    "test": "jest"
   },
   "dependencies": {
     "@emotion/react": "^11.14.0",
