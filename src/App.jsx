@@ -865,4 +865,88 @@ function ServicesCarousel() {
 
   return (
     <section id="services" className="py-20 px-4 bg-blaize-dark text-white">
-      <h2 className="text-3xl md:text-4xl font-bo
+      <h2 className="text-3xl md:text-4xl font-bold mb-12 text-center bg-gradient-to-r from-blaize-green via-blaize-yellow to-blaize-orange text-transparent bg-clip-text">
+        Advanced WebGL Technologies
+      </h2>
+      <div className="relative max-w-5xl mx-auto">
+        <div className="flex items-center justify-center">
+          <div className="relative bg-zinc-900 border border-blaize-green/30 rounded-xl p-8 shadow-glow w-full md:w-3/4 lg:w-2/3 text-center
+                          transition-all duration-500 hover:border-blaize-green/60 hover:shadow-2xl hover:shadow-green-400/20 group">
+            <div className="absolute -inset-px bg-gradient-to-r from-cyan-400/30 to-blaize-green/30 rounded-xl blur-lg opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+            <div className="text-6xl mb-4">{servicesData[currentIndex].icon}</div>
+            <h3 className="text-2xl font-semibold mb-3 text-blaize-green">
+              {servicesData[currentIndex].title}
+            </h3>
+            <p className="text-white/80 leading-relaxed mb-4">
+              {servicesData[currentIndex].description}
+            </p>
+            <div className="inline-block px-3 py-1 bg-blaize-yellow/20 rounded-full text-blaize-yellow text-sm font-medium">
+              {servicesData[currentIndex].tech}
+            </div>
+          </div>
+        </div>
+
+        <button
+          onClick={prevService}
+          className="absolute left-0 top-1/2 -translate-y-1/2 p-3 bg-blaize-green/70 rounded-full text-white transition-all duration-300 z-10 ml-2
+                    hover:bg-blaize-green hover:shadow-glow hover:scale-110"
+          aria-label="Previous service"
+        >
+          <ChevronLeft size={24} />
+        </button>
+        <button
+          onClick={nextService}
+          className="absolute right-0 top-1/2 -translate-y-1/2 p-3 bg-blaize-green/70 rounded-full text-white transition-all duration-300 z-10 mr-2
+                    hover:bg-blaize-green hover:shadow-glow hover:scale-110"
+          aria-label="Next service"
+        >
+          <ChevronRight size={24} />
+        </button>
+      </div>
+    </section>
+  );
+}
+
+function AboutSection() {
+  return (
+    <section id="about" className="py-20 px-4 text-white bg-blaize-slate">
+      <div className="max-w-4xl mx-auto text-center">
+        <h2 className="text-3xl md:text-4xl font-bold mb-8 bg-gradient-to-r from-blaize-orange via-blaize-yellow to-blaize-green text-transparent bg-clip-text">
+          High-Performance WebGL Research
+        </h2>
+        <p className="text-lg leading-relaxed mb-6">
+          Our advanced mobile WebGL nebula rendering system achieves desktop-quality visuals while maintaining 60fps on mobile devices. Through GPU-accelerated particle systems, optimized volumetric shaders, and intelligent quality scaling, we create photorealistic space environments that work across all platforms.
+        </p>
+        <p className="text-lg leading-relaxed mb-10">
+          Using cutting-edge techniques like transform feedback, blue noise dithering, and adaptive LOD systems, our solutions push the boundaries of what's possible with real-time graphics in the browser.
+        </p>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          <div className="relative bg-zinc-900 p-6 rounded-lg shadow-md border border-blaize-yellow/30 overflow-hidden group
+                          transition-all duration-500 hover:border-blaize-yellow/60 hover:shadow-xl hover:shadow-yellow-400/20">
+            <div className="absolute inset-0 bg-gradient-to-br from-yellow-400/10 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+            <h3 className="text-xl font-semibold text-blaize-yellow mb-2">GPU Acceleration</h3>
+            <p className="text-white/80">Transform feedback and compute shaders for massive particle systems</p>
+          </div>
+          <div className="relative bg-zinc-900 p-6 rounded-lg shadow-md border border-blaize-green/30 overflow-hidden group
+                          transition-all duration-500 hover:border-blaize-green/60 hover:shadow-xl hover:shadow-green-400/20">
+            <div className="absolute inset-0 bg-gradient-to-br from-green-400/10 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+            <h3 className="text-xl font-semibold text-blaize-green mb-2">Mobile First</h3>
+            <p className="text-white/80">Adaptive quality scaling and VRAM budgeting for all devices</p>
+          </div>
+          <div className="relative bg-zinc-900 p-6 rounded-lg shadow-md border border-blaize-orange/30 overflow-hidden group
+                          transition-all duration-500 hover:border-blaize-orange/60 hover:shadow-xl hover:shadow-orange-400/20">
+            <div className="absolute inset-0 bg-gradient-to-br from-orange-400/10 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+            <h3 className="text-xl font-semibold text-blaize-orange mb-2">Realistic Physics</h3>
+            <p className="text-white/80">Physically-based rendering with advanced noise functions</p>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+// Performance Metrics Display
+function PerformanceMetrics({ adaptiveQualityManager }) {
+  const [metrics, setMetrics] = useState({
+    fps: 60,
+    particleCount: 100000,
