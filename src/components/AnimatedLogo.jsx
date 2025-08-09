@@ -18,12 +18,10 @@ const flameFragmentShader = `
   uniform float uTime;
   uniform vec2 uMouse;
 
-  // Hash / random helpers
   float random(vec2 st) {
     return fract(sin(dot(st, vec2(12.9898,78.233))) * 43758.5453123);
   }
 
-  // 2D value noise
   float noise(vec2 st) {
     vec2 i = floor(st);
     vec2 f = fract(st);
@@ -35,7 +33,6 @@ const flameFragmentShader = `
     return mix(a, b, u.x) + (c - a) * u.y * (1.0 - u.x) + (d - b) * u.y * u.x;
   }
 
-  // Fractal Brownian Motion
   float fbm(vec2 p) {
     float v = 0.0;
     float a = 0.5;
@@ -49,34 +46,25 @@ const flameFragmentShader = `
 
   void main() {
     vec2 uv = vUv;
-
-    // Distance from mouse (in UV space)
     float mouseDist = distance(uv, uMouse);
 
-    // Distort the upper part (flame region)
     if (uv.y > 0.6) {
       float distortion = noise(uv * 4.0 + uTime * 0.8) * 0.03;
-      uv.y += noise(uv * 3.0 + uTime * 1.5) * 0.04; // upward flicker
+      uv.y += noise(uv * 3.0 + uTime * 1.5) * 0.04;
       uv.x += distortion;
 
-      // React to mouse proximity
       if (mouseDist < 0.3) {
         uv.x += (noise(uv * 10.0 + uTime * 2.0) - 0.5) * 0.05 * (1.0 - mouseDist / 0.3);
       }
     }
 
     vec4 baseColor = texture2D(uTexture, uv);
+    if (baseColor.a < 0.1) discard;
 
-    // Discard fully transparent areas of the logo
-    if (baseColor.a < 0.1) {
-      discard;
-    }
-
-    // Optional nebula tint on the top half for extra depth
     if (vUv.y > 0.5) {
       float n = fbm(vUv * 4.0 + uTime * 0.2);
-      vec3 color1 = vec3(0.2, 0.8, 1.0); // cyan
-      vec3 color2 = vec3(0.8, 0.4, 1.0); // purple
+      vec3 color1 = vec3(0.2, 0.8, 1.0);
+      vec3 color2 = vec3(0.8, 0.4, 1.0);
       vec3 nebula = mix(color1, color2, n);
       baseColor.rgb = mix(baseColor.rgb, nebula, 0.5);
     }
@@ -124,7 +112,6 @@ export default function AnimatedLogo() {
       tex.generateMipmaps = true;
       tex.needsUpdate = true;
     });
-    // For ShaderMaterial sampling orientation
     texture.flipY = false;
 
     // Geometry / material / mesh
@@ -147,7 +134,7 @@ export default function AnimatedLogo() {
     const handleMouseMove = (e) => {
       const rect = mount.getBoundingClientRect();
       const x = (e.clientX - rect.left) / rect.width;
-      const y = 1.0 - (e.clientY - rect.top) / rect.height; // invert Y for UV
+      const y = 1.0 - (e.clientY - rect.top) / rect.height;
       mouse.current.x = THREE.MathUtils.clamp(x, 0, 1);
       mouse.current.y = THREE.MathUtils.clamp(y, 0, 1);
     };
@@ -191,10 +178,6 @@ export default function AnimatedLogo() {
     };
   }, []);
 
-  return (
-    <div
-      ref={mountRef}
-      style={{ width: '400px', height: '400px', maxWidth: '90vw', maxHeight: '90vw' }}
-    />
-  );
+  // Resolved to the 512×512 container
+  return <div ref={mountRef} style={{ width: '512px', height: '512px', maxWidth: '100%' }} />;
 }
