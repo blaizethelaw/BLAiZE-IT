@@ -120,5 +120,5 @@ export default function AnimatedLogo() {
     };
   }, []);
 
-  return <div ref={mountRef} style={{ width: '512px', height: '512px', maxWidth: '100%' }} />;
+  return <div ref={mountRef} className="w-full h-full" />;
 }
