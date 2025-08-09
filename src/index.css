@@ -46,3 +46,19 @@ body {
 .glowing-button {
     animation: glowing 3s infinite ease-in-out;
 }
+
+@keyframes nebulaFlame {
+    0% {
+        transform: translate3d(-2%, -2%, 0) scale(1);
+    }
+    50% {
+        transform: translate3d(2%, 2%, 0) scale(1.05);
+    }
+    100% {
+        transform: translate3d(-2%, -2%, 0) scale(1);
+    }
+}
+
+.animate-nebula {
+    animation: nebulaFlame 8s ease-in-out infinite;
+}
