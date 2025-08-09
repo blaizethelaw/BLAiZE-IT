@@ -15,7 +15,7 @@ function InteractiveLogo() {
 
   return (
     <motion.div
-      className="relative w-52 h-52 flex items-center justify-center"
+      className="w-full h-full flex items-center justify-center"
       onMouseMove={handleMouseMove}
       animate={{ x: offset.x, y: offset.y }}
       transition={{ type: "spring", stiffness: 80, damping: 10 }}
@@ -23,7 +23,7 @@ function InteractiveLogo() {
       <motion.img
         src="https://i.imgur.com/VHCRCEn.png"
         alt="BLAiZE IT Logo"
-        className="w-52 h-auto relative z-10 pointer-events-none"
+        className="w-full h-auto relative z-10 pointer-events-none"
         initial={{ scale: 0.85, opacity: 0 }}
         animate={{ scale: 1, opacity: 1, y: [0, -4, 0] }}
         transition={{
@@ -37,7 +37,6 @@ function InteractiveLogo() {
           },
         }}
       />
-      <div className="absolute inset-0 pointer-events-none mix-blend-screen opacity-70 animate-nebula bg-[radial-gradient(circle_at_center,rgba(255,132,0,0.6),rgba(77,153,0,0.2),transparent)] blur-sm" />
     </motion.div>
   );
 }
@@ -69,7 +68,10 @@ export default function HeroSection() {
     <div className="w-full bg-black">
       <section className="flex flex-col items-center justify-center text-center pt-20">
         <div className="w-full flex justify-center items-center py-8">
-          {useInteractive ? <InteractiveLogo /> : <AnimatedLogo />}
+          <div className="relative w-52 h-52 flex items-center justify-center">
+            {useInteractive ? <InteractiveLogo /> : <AnimatedLogo />}
+            <div className="absolute inset-0 pointer-events-none mix-blend-screen opacity-70 animate-nebula bg-[radial-gradient(circle_at_center,rgba(255,132,0,0.6),rgba(77,153,0,0.2),transparent)] blur-sm" />
+          </div>
         </div>
         <h1 className="text-4xl md:text-6xl font-extrabold bg-gradient-to-r from-blaize-green to-blaize-orange bg-clip-text text-transparent mb-6">
           BLAiZE IT Solutions
