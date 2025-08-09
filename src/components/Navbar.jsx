@@ -22,7 +22,7 @@ export default function Navbar() {
     >
       <div className="flex items-center max-w-7xl mx-auto px-4 py-2">
         <img
-          src="https://i.imgur.com/8Fw1SgH.png"
+          src="https://i.imgur.com/VHCRCEn.png"
           alt="BLAiZE IT Logo"
           className="h-9 mr-3"
           draggable={false}
