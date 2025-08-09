@@ -46,7 +46,7 @@ export default function HeroSection() {
   const [useInteractive, setUseInteractive] = useState(true);
 
   useEffect(() => {
-    // 1️⃣ Check for browser animation support
+    // Check for browser animation support
     let supportsAnimation = true;
     try {
       const test = document.createElement("div");
@@ -55,7 +55,7 @@ export default function HeroSection() {
       supportsAnimation = false;
     }
 
-    // 2️⃣ Check for OS "Reduce Motion" preference
+    // Check for OS "Reduce Motion" preference
     const prefersReducedMotion = window.matchMedia(
       "(prefers-reduced-motion: reduce)"
     ).matches;
