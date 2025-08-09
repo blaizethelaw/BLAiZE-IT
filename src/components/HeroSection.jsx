@@ -1,12 +1,5 @@
-// src/components/HeroSection.jsx
 import React, { useState } from "react";
 import { motion } from "framer-motion";
-import AnimatedLogo from "./AnimatedLogo";
-
-// Toggle which animated logo to use:
-// true  -> InteractiveLogo (Framer Motion, lightweight)
-// false -> AnimatedLogo (THREE.js shader)
-const USE_INTERACTIVE_LOGO = true;
 
 function InteractiveLogo() {
   const [offset, setOffset] = useState({ x: 0, y: 0 });
@@ -31,14 +24,10 @@ function InteractiveLogo() {
         className="w-52 h-auto relative z-10 pointer-events-none"
         initial={{ scale: 0.85, opacity: 0 }}
         animate={{ scale: 1, opacity: 1, y: [0, -4, 0] }}
-        transition={{
-          type: "spring",
-          duration: 0.7,
-          delay: 0.1,
-          y: { repeat: Infinity, repeatType: "mirror", duration: 3 },
-        }}
+        transition={{ type: "spring", duration: 0.7, delay: 0.1, y: { repeat: Infinity, repeatType: "mirror", duration: 3 } }}
+        crossOrigin="anonymous"
       />
-      <div className="absolute inset-0 pointer-events-none mix-blend-screen opacity-70 bg-[radial-gradient(circle_at_center,rgba(255,132,0,0.6),rgba(77,153,0,0.2),transparent)] blur-sm" />
+      <div className="absolute inset-0 pointer-events-none mix-blend-screen opacity-70 animate-nebula bg-[radial-gradient(circle_at_center,rgba(255,132,0,0.6),rgba(77,153,0,0.2),transparent)] blur-sm" />
     </motion.div>
   );
 }
@@ -46,16 +35,14 @@ function InteractiveLogo() {
 export default function HeroSection() {
   return (
     <div className="w-full bg-black">
-      <section className="flex flex-col items-center justify-center text-center pt-12 md:pt-20">
-        <div className="w-full flex justify-center items-center py-4">
-          {USE_INTERACTIVE_LOGO ? <InteractiveLogo /> : <AnimatedLogo />}
+      <section className="flex flex-col items-center justify-center text-center pt-20">
+        <div className="w-full flex justify-center items-center py-8">
+          <InteractiveLogo />
         </div>
-
         <h1 className="text-4xl md:text-6xl font-extrabold bg-gradient-to-r from-blaize-green to-blaize-orange bg-clip-text text-transparent mb-6">
           BLAiZE IT Solutions
         </h1>
-
-        <p className="text-lg md:text-2xl text-white/80 mb-10 max-w-xl px-4">
+        <p className="text-lg md:text-2xl text-white/80 mb-10 max-w-xl">
           IT Solutions for Business and Home
         </p>
       </section>
