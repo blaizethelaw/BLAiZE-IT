@@ -1,3 +1,4 @@
+// src/components/AboutSection.jsx
 import React from "react";
 import { motion } from "framer-motion";
 
@@ -12,7 +13,7 @@ export default function AboutSection() {
         viewport={{ once: true }}
       >
         <img
-          src="/blaize-logo.png"
+          src="https://i.imgur.com/8Fw1SgH.png"
           alt="BLAiZE IT Founder"
           className="rounded-full w-52 h-52 object-contain shadow-2xl bg-white/10"
         />
