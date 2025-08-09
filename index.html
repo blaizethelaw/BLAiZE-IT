@@ -1,39 +1,42 @@
 <!DOCTYPE html>
 <html lang="en">
   <head>
+    <!-- Meta & Basic Config -->
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>BLAiZE IT Solutions</title>
     <meta name="description" content="IT Solutions for Business and Home" />
-    <link
-      rel="icon"
-      type="image/png"
-      href="https://i.imgur.com/VHCRCEn.png"
-    />
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" href="https://i.imgur.com/VHCRCEn.png" />
+
+    <!-- Open Graph / Social Meta -->
     <meta property="og:title" content="BLAiZE IT Solutions" />
     <meta property="og:description" content="IT Solutions for Business and Home" />
-    <meta
-      property="og:image"
-      content="https://i.imgur.com/VHCRCEn.png"
-    />
+    <meta property="og:image" content="https://i.imgur.com/VHCRCEn.png" />
     <meta property="og:url" content="https://www.blaizeit.com/" />
     <meta property="og:type" content="website" />
+
+    <!-- Twitter Card -->
     <meta name="twitter:card" content="summary_large_image" />
+
+    <!-- Canonical URL -->
     <link rel="canonical" href="https://www.blaizeit.com/" />
-    <link
-      rel="icon"
-      type="image/png"
-      href="https://i.imgur.com/VHCRCEn.png"
-    />
+
+    <!-- Web App Manifest -->
     <link rel="manifest" href="/manifest.webmanifest" />
   </head>
   <body class="bg-blaize-dark font-sans">
     <div id="root"></div>
+
+    <!-- Main React App -->
     <script type="module" src="/src/main.jsx"></script>
+
+    <!-- Service Worker Registration -->
     <script type="module">
-      if ('serviceWorker' in navigator) {
-        window.addEventListener('load', () => {
-          navigator.serviceWorker.register('/sw.js');
+      if ("serviceWorker" in navigator) {
+        window.addEventListener("load", () => {
+          navigator.serviceWorker.register("/sw.js");
         });
       }
     </script>
