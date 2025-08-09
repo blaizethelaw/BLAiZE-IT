@@ -65,7 +65,7 @@ export default function AnimatedLogo() {
     currentMount.appendChild(renderer.domElement);
 
     const loader = new THREE.TextureLoader();
-    const texture = loader.load('https://i.imgur.com/8Fw1SgH.png'); // New logo from Imgur
+    const texture = loader.load('https://i.imgur.com/VHCRCEn.png'); // New logo from Imgur
 
     const geometry = new THREE.PlaneGeometry(8, 8);
     const material = new THREE.ShaderMaterial({
