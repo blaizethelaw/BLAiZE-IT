@@ -44,6 +44,16 @@ const flameFragmentShader = `
     }
 
     vec4 color = texture2D(uTexture, uv);
+
+    // Overlay dynamic nebula colors onto the flame section
+    if (uv.y > 0.5) {
+      float n = fbm(uv * 4.0 + uTime * 0.2);
+      vec3 color1 = vec3(0.2, 0.8, 1.0); // Cyan
+      vec3 color2 = vec3(0.8, 0.4, 1.0); // Purple
+      vec3 nebula = mix(color1, color2, n);
+      color.rgb = mix(color.rgb, nebula, 0.5);
+    }
+
     gl_FragColor = color;
   }
 `;
