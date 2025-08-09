@@ -48,7 +48,6 @@ blaize-it/
 ├── tailwind.config.js
 ├── postcss.config.js
 ├── public/
-│   ├── blaize-logo.png
 │   ├── manifest.webmanifest
 │   └── sw.js
 └── src/
@@ -72,6 +71,8 @@ blaize-it/
         ├── ServicesPage.jsx
         └── TestimonialsPage.jsx
 ```
+
+> **Note:** The site logo is loaded dynamically from `https://i.imgur.com/VHCRCEn.png` and is not bundled in this repository.
 
 ## Deployment
 A sample `vercel.json` configuration is provided for deploying to [Vercel](https://vercel.com/). The service worker enables offline caching of the main page, while the web manifest allows installation as a PWA.
