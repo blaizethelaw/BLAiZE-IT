@@ -1,48 +1,29 @@
-import React, { useState } from "react";
-import { motion } from "framer-motion";
-
-function InteractiveLogo() {
-  const [offset, setOffset] = useState({ x: 0, y: 0 });
-
-  const handleMouseMove = (e) => {
-    const rect = e.currentTarget.getBoundingClientRect();
-    const x = ((e.clientX - rect.left - rect.width / 2) / rect.width) * 20;
-    const y = ((e.clientY - rect.top - rect.height / 2) / rect.height) * 20;
-    setOffset({ x, y });
-  };
-
-  return (
-    <motion.div
-      className="relative w-52 h-52 flex items-center justify-center"
-      onMouseMove={handleMouseMove}
-      animate={{ x: offset.x, y: offset.y }}
-      transition={{ type: "spring", stiffness: 80, damping: 10 }}
-    >
-      <motion.img
-        src="https://i.imgur.com/VHCRCEn.png"
-        alt="BLAiZE IT Logo"
-        className="w-52 h-auto relative z-10 pointer-events-none"
-        initial={{ scale: 0.85, opacity: 0 }}
-        animate={{ scale: 1, opacity: 1, y: [0, -4, 0] }}
-        transition={{ type: "spring", duration: 0.7, delay: 0.1, y: { repeat: Infinity, repeatType: "mirror", duration: 3 } }}
-        crossOrigin="anonymous"
-      />
-      <div className="absolute inset-0 pointer-events-none mix-blend-screen opacity-70 animate-nebula bg-[radial-gradient(circle_at_center,rgba(255,132,0,0.6),rgba(77,153,0,0.2),transparent)] blur-sm" />
-    </motion.div>
-  );
-}
+import React from "react";
+import AnimatedLogo from "./AnimatedLogo";
 
 export default function HeroSection() {
   return (
     <div className="w-full bg-black">
-      <section className="flex flex-col items-center justify-center text-center pt-20">
-        <div className="w-full flex justify-center items-center py-8">
-          <InteractiveLogo />
+      <section className="flex flex-col items-center justify-center text-center min-h-[70vh] pt-10 md:pt-16 relative overflow-hidden">
+        {/* Soft spotlight behind the logo */}
+        <div
+          className="pointer-events-none absolute inset-0 -z-10"
+          style={{
+            background:
+              "radial-gradient(1200px 600px at 50% 20%, rgba(20,50,20,0.55), transparent 70%)",
+          }}
+        />
+
+        {/* Animated flame logo */}
+        <div className="w-full flex justify-center items-center py-6 md:py-8">
+          <AnimatedLogo logoUrl={"https://i.imgur.com/VHCRCEn.png"} width={420} quality="high" />
         </div>
-        <h1 className="text-4xl md:text-6xl font-extrabold bg-gradient-to-r from-blaize-green to-blaize-orange bg-clip-text text-transparent mb-6">
+
+        {/* Headline & sub */}
+        <h1 className="text-4xl md:text-6xl font-extrabold tracking-tight bg-gradient-to-r from-[#9BE22A] via-[#EABA2A] to-[#FF8400] bg-clip-text text-transparent mb-4">
           BLAiZE IT Solutions
         </h1>
-        <p className="text-lg md:text-2xl text-white/80 mb-10 max-w-xl">
+        <p className="text-base md:text-2xl text-white/80 mb-10 px-6 max-w-2xl">
           IT Solutions for Business and Home
         </p>
       </section>
