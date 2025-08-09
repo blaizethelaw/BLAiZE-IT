@@ -15,4 +15,3 @@ export default function InteractiveNebula() {
 
   return <canvas ref={canvasRef} width={300} height={150} />;
 }
-
