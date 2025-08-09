@@ -21,7 +21,7 @@ function InteractiveLogo() {
       transition={{ type: "spring", stiffness: 80, damping: 10 }}
     >
       <motion.img
-        src="https://i.imgur.com/VHCRCEn.png"
+        src="/logo.png"
         alt="BLAiZE IT Logo"
         className="w-52 h-auto relative z-10 pointer-events-none"
         initial={{ scale: 0.85, opacity: 0 }}
