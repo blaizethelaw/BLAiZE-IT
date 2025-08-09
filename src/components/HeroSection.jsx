@@ -1,5 +1,5 @@
 // src/components/HeroSection.jsx
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import AnimatedLogo from "./AnimatedLogo";
 
@@ -43,11 +43,33 @@ function InteractiveLogo() {
 }
 
 export default function HeroSection() {
+  const [useInteractive, setUseInteractive] = useState(true);
+
+  useEffect(() => {
+    // 1️⃣ Check for browser animation support
+    let supportsAnimation = true;
+    try {
+      const test = document.createElement("div");
+      test.animate({ opacity: [0, 1] }, { duration: 100 });
+    } catch {
+      supportsAnimation = false;
+    }
+
+    // 2️⃣ Check for OS "Reduce Motion" preference
+    const prefersReducedMotion = window.matchMedia(
+      "(prefers-reduced-motion: reduce)"
+    ).matches;
+
+    if (!supportsAnimation || prefersReducedMotion) {
+      setUseInteractive(false);
+    }
+  }, []);
+
   return (
     <div className="w-full bg-black">
       <section className="flex flex-col items-center justify-center text-center pt-20">
         <div className="w-full flex justify-center items-center py-8">
-          <InteractiveLogo />
+          {useInteractive ? <InteractiveLogo /> : <AnimatedLogo />}
         </div>
         <h1 className="text-4xl md:text-6xl font-extrabold bg-gradient-to-r from-blaize-green to-blaize-orange bg-clip-text text-transparent mb-6">
           BLAiZE IT Solutions
