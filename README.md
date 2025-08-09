@@ -72,7 +72,7 @@ blaize-it/
         └── TestimonialsPage.jsx
 ```
 
-> **Note:** The site logo is loaded dynamically from `https://i.imgur.com/VHCRCEn.png` and is not bundled in this repository.
+> **Note:** The site logo is downloaded during installation and written to `public/logo.png`.
 
 ## Deployment
 A sample `vercel.json` configuration is provided for deploying to [Vercel](https://vercel.com/). The service worker enables offline caching of the main page, while the web manifest allows installation as a PWA.

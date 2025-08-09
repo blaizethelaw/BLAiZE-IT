@@ -2,6 +2,7 @@
 import React, { useRef, useEffect } from 'react';
 import * as THREE from 'three';
 
+// Vertex shader: passes UVs through.
 const flameVertexShader = `
   varying vec2 vUv;
   void main() {
@@ -10,41 +11,65 @@ const flameVertexShader = `
   }
 `;
 
+// Fragment shader: flame distortion + optional nebula overlay on top half.
 const flameFragmentShader = `
   varying vec2 vUv;
   uniform sampler2D uTexture;
   uniform float uTime;
   uniform vec2 uMouse;
 
-  // FBM noise function from the existing App.jsx
-  mat2 m2 = mat2(0.8, -0.6, 0.6, 0.8);
+  float random(vec2 st) {
+    return fract(sin(dot(st, vec2(12.9898,78.233))) * 43758.5453123);
+  }
 
-  float noise(vec2 p) {
-    return fract(sin(dot(p, vec2(12.9898, 78.233))) * 43758.5453);
+  float noise(vec2 st) {
+    vec2 i = floor(st);
+    vec2 f = fract(st);
+    float a = random(i);
+    float b = random(i + vec2(1.0, 0.0));
+    float c = random(i + vec2(0.0, 1.0));
+    float d = random(i + vec2(1.0, 1.0));
+    vec2 u = f * f * (3.0 - 2.0 * f);
+    return mix(a, b, u.x) + (c - a) * u.y * (1.0 - u.x) + (d - b) * u.y * u.x;
   }
 
   float fbm(vec2 p) {
-    float f = 0.0;
-    f += 0.5000 * noise(p); p = m2 * p * 2.02;
-    f += 0.2500 * noise(p); p = m2 * p * 2.03;
-    f += 0.1250 * noise(p);
-    return f / 0.875;
+    float v = 0.0;
+    float a = 0.5;
+    for (int i = 0; i < 5; i++) {
+      v += a * noise(p);
+      p *= 2.0;
+      a *= 0.5;
+    }
+    return v;
   }
 
   void main() {
     vec2 uv = vUv;
     float mouseDist = distance(uv, uMouse);
 
-    // Apply distortion only to the flame part of the logo (approximated coordinates)
-    if (uv.y > 0.5) {
-      float distortion = fbm(uv * 3.0 + uTime * 0.5) * 0.1;
-      distortion *= (1.0 - smoothstep(0.0, 0.3, mouseDist)); // Mouse interaction
+    if (uv.y > 0.6) {
+      float distortion = noise(uv * 4.0 + uTime * 0.8) * 0.03;
+      uv.y += noise(uv * 3.0 + uTime * 1.5) * 0.04;
       uv.x += distortion;
-      uv.y += fbm(uv * 2.0 - uTime * 0.3) * 0.05;
+
+      if (mouseDist < 0.3) {
+        uv.x += (noise(uv * 10.0 + uTime * 2.0) - 0.5) * 0.05 * (1.0 - mouseDist / 0.3);
+      }
     }
 
-    vec4 color = texture2D(uTexture, uv);
-    gl_FragColor = color;
+    vec4 baseColor = texture2D(uTexture, uv);
+    if (baseColor.a < 0.1) discard;
+
+    if (vUv.y > 0.5) {
+      float n = fbm(vUv * 4.0 + uTime * 0.2);
+      vec3 color1 = vec3(0.2, 0.8, 1.0);
+      vec3 color2 = vec3(0.8, 0.4, 1.0);
+      vec3 nebula = mix(color1, color2, n);
+      baseColor.rgb = mix(baseColor.rgb, nebula, 0.5);
+    }
+
+    gl_FragColor = baseColor;
   }
 `;
 
@@ -53,72 +78,106 @@ export default function AnimatedLogo() {
   const mouse = useRef({ x: 0.5, y: 0.5 });
 
   useEffect(() => {
-    const currentMount = mountRef.current;
-    if (!currentMount) return;
+    const mount = mountRef.current;
+    if (!mount) return;
 
+    // Scene / camera / renderer
     const scene = new THREE.Scene();
-    const camera = new THREE.PerspectiveCamera(75, currentMount.clientWidth / currentMount.clientHeight, 0.1, 1000);
+    const camera = new THREE.PerspectiveCamera(
+      75,
+      mount.clientWidth / mount.clientHeight,
+      0.1,
+      1000
+    );
     camera.position.z = 5;
 
-    const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
-    renderer.setSize(currentMount.clientWidth, currentMount.clientHeight);
-    currentMount.appendChild(renderer.domElement);
+    const renderer = new THREE.WebGLRenderer({
+      alpha: true,
+      antialias: true,
+      powerPreference: 'high-performance',
+      premultipliedAlpha: false,
+    });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+    renderer.setSize(mount.clientWidth, mount.clientHeight);
+    mount.appendChild(renderer.domElement);
 
+    // Texture
     const loader = new THREE.TextureLoader();
-    const texture = loader.load('https://i.imgur.com/VHCRCEn.png'); // Corrected logo from Imgur
+    const texture = loader.load('https://i.imgur.com/VHCRCEn.png', (tex) => {
+      tex.anisotropy = Math.min(8, renderer.capabilities.getMaxAnisotropy());
+      tex.minFilter = THREE.LinearMipmapLinearFilter;
+      tex.magFilter = THREE.LinearFilter;
+      tex.wrapS = THREE.ClampToEdgeWrapping;
+      tex.wrapT = THREE.ClampToEdgeWrapping;
+      tex.generateMipmaps = true;
+      tex.needsUpdate = true;
+    });
+    texture.flipY = false;
 
+    // Geometry / material / mesh
     const geometry = new THREE.PlaneGeometry(8, 8);
     const material = new THREE.ShaderMaterial({
       uniforms: {
         uTexture: { value: texture },
         uTime: { value: 0 },
-        uMouse: { value: new THREE.Vector2(0.5, 0.5) }
+        uMouse: { value: new THREE.Vector2(0.5, 0.5) },
       },
       vertexShader: flameVertexShader,
       fragmentShader: flameFragmentShader,
-      transparent: true
+      transparent: true,
     });
 
     const plane = new THREE.Mesh(geometry, material);
     scene.add(plane);
 
-    const handleMouseMove = (event) => {
-      const rect = currentMount.getBoundingClientRect();
-      mouse.current.x = (event.clientX - rect.left) / rect.width;
-      mouse.current.y = 1.0 - (event.clientY - rect.top) / rect.height;
+    // Mouse tracking (UV space)
+    const handleMouseMove = (e) => {
+      const rect = mount.getBoundingClientRect();
+      const x = (e.clientX - rect.left) / rect.width;
+      const y = 1.0 - (e.clientY - rect.top) / rect.height;
+      mouse.current.x = THREE.MathUtils.clamp(x, 0, 1);
+      mouse.current.y = THREE.MathUtils.clamp(y, 0, 1);
     };
+    window.addEventListener('mousemove', handleMouseMove);
 
-    currentMount.addEventListener('mousemove', handleMouseMove);
-
+    // Render loop
     const clock = new THREE.Clock();
+    let raf = 0;
     const animate = () => {
       material.uniforms.uTime.value = clock.getElapsedTime();
-      material.uniforms.uMouse.value.x += (mouse.current.x - material.uniforms.uMouse.value.x) * 0.05;
-      material.uniforms.uMouse.value.y += (mouse.current.y - material.uniforms.uMouse.value.y) * 0.05;
-
+      material.uniforms.uMouse.value.lerp(
+        new THREE.Vector2(mouse.current.x, mouse.current.y),
+        0.1
+      );
       renderer.render(scene, camera);
-      requestAnimationFrame(animate);
+      raf = requestAnimationFrame(animate);
     };
-
     animate();
 
+    // Resize
     const handleResize = () => {
-        camera.aspect = currentMount.clientWidth / currentMount.clientHeight;
-        camera.updateProjectionMatrix();
-        renderer.setSize(currentMount.clientWidth, currentMount.clientHeight);
+      const w = mount.clientWidth;
+      const h = mount.clientHeight;
+      camera.aspect = w / h;
+      camera.updateProjectionMatrix();
+      renderer.setSize(w, h);
     };
-
     window.addEventListener('resize', handleResize);
 
-
+    // Cleanup
     return () => {
+      cancelAnimationFrame(raf);
+      window.removeEventListener('mousemove', handleMouseMove);
       window.removeEventListener('resize', handleResize);
-      currentMount.removeEventListener('mousemove', handleMouseMove);
-      if (currentMount) {
-        currentMount.removeChild(renderer.domElement);
-      }
+      scene.remove(plane);
+      geometry.dispose();
+      material.dispose();
+      texture.dispose();
+      renderer.dispose();
+      mount.removeChild(renderer.domElement);
     };
   }, []);
 
+  // Resolved to the 512×512 container
   return <div ref={mountRef} style={{ width: '512px', height: '512px', maxWidth: '100%' }} />;
 }

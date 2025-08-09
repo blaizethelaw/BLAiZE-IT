@@ -13,7 +13,7 @@ export default function AboutSection() {
         viewport={{ once: true }}
       >
         <img
-          src="https://i.imgur.com/VHCRCEn.png"
+          src="/logo.png"
           alt="BLAiZE IT Founder"
           className="rounded-full w-52 h-52 object-contain shadow-2xl bg-white/10"
         />
