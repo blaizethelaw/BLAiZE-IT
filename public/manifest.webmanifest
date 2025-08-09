@@ -3,12 +3,12 @@
   "short_name": "BLAiZE IT",
   "icons": [
     {
-      "src": "/blaize-logo.png",
+      "src": "https://i.imgur.com/VHCRCEn.png",
       "sizes": "192x192",
       "type": "image/png"
     },
     {
-      "src": "/blaize-logo.png",
+      "src": "https://i.imgur.com/VHCRCEn.png",
       "sizes": "512x512",
       "type": "image/png"
     }

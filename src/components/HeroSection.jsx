@@ -1,5 +1,7 @@
+// src/components/HeroSection.jsx
 import React, { useState } from "react";
 import { motion } from "framer-motion";
+import AnimatedLogo from "./AnimatedLogo";
 
 function InteractiveLogo() {
   const [offset, setOffset] = useState({ x: 0, y: 0 });
