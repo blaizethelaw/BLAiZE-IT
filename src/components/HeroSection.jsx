@@ -30,11 +30,7 @@ function InteractiveLogo() {
           type: "spring",
           duration: 0.7,
           delay: 0.1,
-          y: {
-            repeat: Infinity,
-            repeatType: "mirror",
-            duration: 3,
-          },
+          y: { repeat: Infinity, repeatType: "mirror", duration: 3 },
         }}
       />
       <div className="absolute inset-0 pointer-events-none mix-blend-screen opacity-70 animate-nebula bg-[radial-gradient(circle_at_center,rgba(255,132,0,0.6),rgba(77,153,0,0.2),transparent)] blur-sm" />
@@ -50,13 +46,13 @@ export default function HeroSection() {
     let supportsAnimation = true;
     try {
       const test = document.createElement("div");
-      test.animate({ opacity: [0, 1] }, { duration: 100 });
+      test.animate?.({ opacity: [0, 1] }, { duration: 100 });
     } catch {
       supportsAnimation = false;
     }
 
     // Check for OS "Reduce Motion" preference
-    const prefersReducedMotion = window.matchMedia(
+    const prefersReducedMotion = window.matchMedia?.(
       "(prefers-reduced-motion: reduce)"
     ).matches;
 
@@ -67,14 +63,34 @@ export default function HeroSection() {
 
   return (
     <div className="w-full bg-black">
-      <section className="flex flex-col items-center justify-center text-center pt-20">
-        <div className="w-full flex justify-center items-center py-8">
-          {useInteractive ? <InteractiveLogo /> : <AnimatedLogo />}
+      <section className="flex flex-col items-center justify-center text-center min-h-[70vh] pt-10 md:pt-16 relative overflow-hidden">
+        {/* Soft spotlight behind the logo */}
+        <div
+          className="pointer-events-none absolute inset-0 -z-10"
+          style={{
+            background:
+              "radial-gradient(1200px 600px at 50% 20%, rgba(20,50,20,0.55), transparent 70%)",
+          }}
+        />
+
+        {/* Logo */}
+        <div className="w-full flex justify-center items-center py-6 md:py-8">
+          {useInteractive ? (
+            <InteractiveLogo />
+          ) : (
+            <AnimatedLogo
+              logoUrl="https://i.imgur.com/VHCRCEn.png"
+              width={420}
+              quality="high"
+            />
+          )}
         </div>
-        <h1 className="text-4xl md:text-6xl font-extrabold bg-gradient-to-r from-blaize-green to-blaize-orange bg-clip-text text-transparent mb-6">
+
+        {/* Headline & sub */}
+        <h1 className="text-4xl md:text-6xl font-extrabold tracking-tight bg-gradient-to-r from-[#9BE22A] via-[#EABA2A] to-[#FF8400] bg-clip-text text-transparent mb-4">
           BLAiZE IT Solutions
         </h1>
-        <p className="text-lg md:text-2xl text-white/80 mb-10 max-w-xl">
+        <p className="text-base md:text-2xl text-white/80 mb-10 px-6 max-w-2xl">
           IT Solutions for Business and Home
         </p>
       </section>
