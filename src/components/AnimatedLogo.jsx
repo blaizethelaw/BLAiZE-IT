@@ -2,7 +2,7 @@
 import React, { useRef, useEffect } from 'react';
 import * as THREE from 'three';
 
-// This is the vertex shader. It positions the vertices of the plane.
+// Vertex shader: passes UVs through.
 const flameVertexShader = `
   varying vec2 vUv;
   void main() {
@@ -11,63 +11,77 @@ const flameVertexShader = `
   }
 `;
 
-// This is the fragment shader. It colors the pixels and creates the flame effect.
+// Fragment shader: flame distortion + optional nebula overlay on top half.
 const flameFragmentShader = `
   varying vec2 vUv;
   uniform sampler2D uTexture;
   uniform float uTime;
   uniform vec2 uMouse;
 
-  // 2D noise function to create the flame's movement
-  float random (vec2 st) {
-    return fract(sin(dot(st.xy, vec2(12.9898,78.233))) * 43758.5453123);
+  // Hash / random helpers
+  float random(vec2 st) {
+    return fract(sin(dot(st, vec2(12.9898,78.233))) * 43758.5453123);
   }
 
-  // 2D noise function for distortion
-  float noise (vec2 st) {
+  // 2D value noise
+  float noise(vec2 st) {
     vec2 i = floor(st);
     vec2 f = fract(st);
     float a = random(i);
     float b = random(i + vec2(1.0, 0.0));
     float c = random(i + vec2(0.0, 1.0));
     float d = random(i + vec2(1.0, 1.0));
-    vec2 u = f*f*(3.0-2.0*f);
-    return mix(a, b, u.x) + (c - a)* u.y * (1.0 - u.x) + (d - b) * u.y * u.x;
+    vec2 u = f * f * (3.0 - 2.0 * f);
+    return mix(a, b, u.x) + (c - a) * u.y * (1.0 - u.x) + (d - b) * u.y * u.x;
+  }
+
+  // Fractal Brownian Motion
+  float fbm(vec2 p) {
+    float v = 0.0;
+    float a = 0.5;
+    for (int i = 0; i < 5; i++) {
+      v += a * noise(p);
+      p *= 2.0;
+      a *= 0.5;
+    }
+    return v;
   }
 
   void main() {
     vec2 uv = vUv;
-    
-    // Calculate distance from the mouse to the current pixel
+
+    // Distance from mouse (in UV space)
     float mouseDist = distance(uv, uMouse);
 
-    // This effect targets the upper part of the image where the flame is.
-    // The uv.y > 0.6 condition ensures we only distort the flame.
+    // Distort the upper part (flame region)
     if (uv.y > 0.6) {
-      // Create a time-varying distortion effect using the noise function
       float distortion = noise(uv * 4.0 + uTime * 0.8) * 0.03;
-      
-      // Make the flame "flicker" upwards
-      uv.y += noise(uv * 3.0 + uTime * 1.5) * 0.04;
-      
-      // Apply horizontal distortion
+      uv.y += noise(uv * 3.0 + uTime * 1.5) * 0.04; // upward flicker
       uv.x += distortion;
 
-      // When the mouse is close, increase the distortion effect
+      // React to mouse proximity
       if (mouseDist < 0.3) {
         uv.x += (noise(uv * 10.0 + uTime * 2.0) - 0.5) * 0.05 * (1.0 - mouseDist / 0.3);
       }
     }
 
-    // Get the color from the original texture at the (potentially distorted) uv coordinate
-    vec4 textureColor = texture2D(uTexture, uv);
+    vec4 baseColor = texture2D(uTexture, uv);
 
-    // If the pixel is outside the logo's visible area (alpha is 0), discard it.
-    if (textureColor.a < 0.1) {
+    // Discard fully transparent areas of the logo
+    if (baseColor.a < 0.1) {
       discard;
     }
 
-    gl_FragColor = textureColor;
+    // Optional nebula tint on the top half for extra depth
+    if (vUv.y > 0.5) {
+      float n = fbm(vUv * 4.0 + uTime * 0.2);
+      vec3 color1 = vec3(0.2, 0.8, 1.0); // cyan
+      vec3 color2 = vec3(0.8, 0.4, 1.0); // purple
+      vec3 nebula = mix(color1, color2, n);
+      baseColor.rgb = mix(baseColor.rgb, nebula, 0.5);
+    }
+
+    gl_FragColor = baseColor;
   }
 `;
 
@@ -76,79 +90,111 @@ export default function AnimatedLogo() {
   const mouse = useRef({ x: 0.5, y: 0.5 });
 
   useEffect(() => {
-    const currentMount = mountRef.current;
-    if (!currentMount) return;
+    const mount = mountRef.current;
+    if (!mount) return;
 
-    // --- Scene, Camera, and Renderer Setup ---
+    // Scene / camera / renderer
     const scene = new THREE.Scene();
-    const camera = new THREE.PerspectiveCamera(75, currentMount.clientWidth / currentMount.clientHeight, 0.1, 1000);
+    const camera = new THREE.PerspectiveCamera(
+      75,
+      mount.clientWidth / mount.clientHeight,
+      0.1,
+      1000
+    );
     camera.position.z = 5;
 
-    const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
-    renderer.setSize(currentMount.clientWidth, currentMount.clientHeight);
-    currentMount.appendChild(renderer.domElement);
+    const renderer = new THREE.WebGLRenderer({
+      alpha: true,
+      antialias: true,
+      powerPreference: 'high-performance',
+      premultipliedAlpha: false,
+    });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+    renderer.setSize(mount.clientWidth, mount.clientHeight);
+    mount.appendChild(renderer.domElement);
 
-    // --- Texture Loading ---
+    // Texture
     const loader = new THREE.TextureLoader();
-    // Using the CORRECT direct image link
-    const texture = loader.load('https://i.imgur.com/VHCRCEn.png');
+    const texture = loader.load('https://i.imgur.com/VHCRCEn.png', (tex) => {
+      tex.anisotropy = Math.min(8, renderer.capabilities.getMaxAnisotropy());
+      tex.minFilter = THREE.LinearMipmapLinearFilter;
+      tex.magFilter = THREE.LinearFilter;
+      tex.wrapS = THREE.ClampToEdgeWrapping;
+      tex.wrapT = THREE.ClampToEdgeWrapping;
+      tex.generateMipmaps = true;
+      tex.needsUpdate = true;
+    });
+    // For ShaderMaterial sampling orientation
+    texture.flipY = false;
 
-    // --- Geometry and Material ---
+    // Geometry / material / mesh
     const geometry = new THREE.PlaneGeometry(8, 8);
     const material = new THREE.ShaderMaterial({
       uniforms: {
         uTexture: { value: texture },
         uTime: { value: 0 },
-        uMouse: { value: new THREE.Vector2(0.5, 0.5) } // Start mouse in the center
+        uMouse: { value: new THREE.Vector2(0.5, 0.5) },
       },
       vertexShader: flameVertexShader,
       fragmentShader: flameFragmentShader,
-      transparent: true
+      transparent: true,
     });
 
     const plane = new THREE.Mesh(geometry, material);
     scene.add(plane);
 
-    // --- Mouse Move Handler ---
-    const handleMouseMove = (event) => {
-      const rect = currentMount.getBoundingClientRect();
-      // Convert mouse position to UV coordinates (0 to 1)
-      mouse.current.x = (event.clientX - rect.left) / rect.width;
-      mouse.current.y = 1.0 - (event.clientY - rect.top) / rect.height; // Invert Y
+    // Mouse tracking (UV space)
+    const handleMouseMove = (e) => {
+      const rect = mount.getBoundingClientRect();
+      const x = (e.clientX - rect.left) / rect.width;
+      const y = 1.0 - (e.clientY - rect.top) / rect.height; // invert Y for UV
+      mouse.current.x = THREE.MathUtils.clamp(x, 0, 1);
+      mouse.current.y = THREE.MathUtils.clamp(y, 0, 1);
     };
     window.addEventListener('mousemove', handleMouseMove);
 
-    // --- Animation Loop ---
+    // Render loop
     const clock = new THREE.Clock();
+    let raf = 0;
     const animate = () => {
-      // Update time uniform for animation
       material.uniforms.uTime.value = clock.getElapsedTime();
-      // Smoothly update mouse uniform
-      material.uniforms.uMouse.value.x += (mouse.current.x - material.uniforms.uMouse.value.x) * 0.05;
-      material.uniforms.uMouse.value.y += (mouse.current.y - material.uniforms.uMouse.value.y) * 0.05;
-
+      material.uniforms.uMouse.value.lerp(
+        new THREE.Vector2(mouse.current.x, mouse.current.y),
+        0.1
+      );
       renderer.render(scene, camera);
-      requestAnimationFrame(animate);
+      raf = requestAnimationFrame(animate);
     };
     animate();
 
-    // --- Resize Handler ---
+    // Resize
     const handleResize = () => {
-        camera.aspect = currentMount.clientWidth / currentMount.clientHeight;
-        camera.updateProjectionMatrix();
-        renderer.setSize(currentMount.clientWidth, currentMount.clientHeight);
+      const w = mount.clientWidth;
+      const h = mount.clientHeight;
+      camera.aspect = w / h;
+      camera.updateProjectionMatrix();
+      renderer.setSize(w, h);
     };
     window.addEventListener('resize', handleResize);
 
-    // --- Cleanup ---
+    // Cleanup
     return () => {
-      window.removeEventListener('resize', handleResize);
+      cancelAnimationFrame(raf);
       window.removeEventListener('mousemove', handleMouseMove);
-      if (currentMount) {
-        currentMount.removeChild(renderer.domElement);
-      }
+      window.removeEventListener('resize', handleResize);
+      scene.remove(plane);
+      geometry.dispose();
+      material.dispose();
+      texture.dispose();
+      renderer.dispose();
+      mount.removeChild(renderer.domElement);
     };
   }, []);
 
-  return <div ref={mountRef} style={{ width: '400px', height: '400px', maxWidth: '90vw', maxHeight: '90vw' }} />;
+  return (
+    <div
+      ref={mountRef}
+      style={{ width: '400px', height: '400px', maxWidth: '90vw', maxHeight: '90vw' }}
+    />
+  );
 }
