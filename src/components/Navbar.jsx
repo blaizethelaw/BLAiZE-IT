@@ -1,6 +1,6 @@
-// src/components/Navbar.jsx
 import React from "react";
 import DarkModeToggle from "./DarkModeToggle";
+import InteractiveLogo from "./InteractiveLogo";
 
 const navItems = [
   { name: "Home", path: "home" },
@@ -18,29 +18,14 @@ export default function Navbar({ setCurrentPage, currentPage }) {
       style={{ boxShadow: "0 2px 12px 0 rgba(0,0,0,0.12)" }}
     >
       <div className="flex items-center max-w-7xl mx-auto px-4 py-2">
-        {/* Clickable logo */}
-        <div
-          id="logo-container"
-          className="logo-wrapper mr-3 cursor-pointer select-none"
-          onClick={() => setCurrentPage("home")}
-          aria-label="Go to Home"
-          role="img"
-        >
-          <img
-            src="https://i.imgur.com/VHCRCEn.png"
-            alt="BLAiZE IT Logo"
-            className="h-9"
-            draggable={false}
-          />
+        <div onClick={() => setCurrentPage("home")} className="cursor-pointer mr-3">
+          <InteractiveLogo />
         </div>
-
-        {/* Nav */}
-        <nav className="flex-1" role="navigation" aria-label="Primary">
+        <nav className="flex-1">
           <ul className="flex gap-6 text-lg font-semibold">
             {navItems.map((item) => (
               <li key={item.name}>
                 <button
-                  type="button"
                   onClick={() => setCurrentPage(item.path)}
                   className={`${
                     currentPage === item.path
@@ -54,11 +39,7 @@ export default function Navbar({ setCurrentPage, currentPage }) {
             ))}
           </ul>
         </nav>
-
-        {/* Dark mode toggle on the right */}
-        <div className="ml-4">
-          <DarkModeToggle />
-        </div>
+        <DarkModeToggle />
       </div>
     </header>
   );
