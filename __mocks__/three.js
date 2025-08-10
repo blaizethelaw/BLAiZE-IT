@@ -27,11 +27,7 @@ export class WebGLRenderer {
 WebGLRenderer.instances = [];
 
 export class TextureLoader {
-  constructor() {
-    this.crossOrigin = '';
-  }
   load() { return {}; }
-  setCrossOrigin(value) { this.crossOrigin = value; }
 }
 
 export class AmbientLight {
