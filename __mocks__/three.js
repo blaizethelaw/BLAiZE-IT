@@ -14,12 +14,14 @@ export class PerspectiveCamera {
 export class WebGLRenderer {
   constructor() {
     this.domElement = document.createElement('canvas');
+    WebGLRenderer.instances.push(this);
   }
   setSize() {}
   setPixelRatio() {}
   render() {}
   dispose() {}
 }
+WebGLRenderer.instances = [];
 
 export class AmbientLight {
   constructor() {}
@@ -66,10 +68,14 @@ export class ShaderMaterial {
 }
 
 export class Mesh {
-  constructor() {
+  constructor(geometry, material) {
+    this.geometry = geometry;
+    this.material = material;
     this.rotation = { x: 0, y: 0 };
+    Mesh.instances.push(this);
   }
 }
+Mesh.instances = [];
 
 export class PointsMaterial {
   constructor() {}
