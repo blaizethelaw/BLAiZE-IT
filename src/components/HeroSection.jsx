@@ -6,7 +6,7 @@ export default function HeroSection() {
     <div className="w-full bg-black">
       <section className="flex flex-col items-center justify-center text-center pt-12 md:pt-20">
         <div className="w-full flex justify-center items-center py-4">
-          <img src="https://i.imgur.com/KvRnUTU.png" alt="BLAiZE IT Solutions Logo" className="w-64 h-64" />
+          <img src="https://i.imgur.com/tzdJVgN.png" alt="BLAiZE IT Solutions Logo" className="w-64 h-64" />
         </div>
         <h1 className="text-4xl md:text-6xl font-extrabold bg-gradient-to-r from-blaize-green to-blaize-orange bg-clip-text text-transparent mb-6">
           BLAiZE IT Solutions
