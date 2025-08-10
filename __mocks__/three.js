@@ -1,3 +1,5 @@
+// Minimal three.js-like stubs (merged)
+
 export class Scene {
   add() {}
   remove() {}
@@ -14,14 +16,19 @@ export class PerspectiveCamera {
 export class WebGLRenderer {
   constructor() {
     this.domElement = document.createElement('canvas');
+    this._pixelRatio = 1;
     WebGLRenderer.instances.push(this);
   }
   setSize() {}
-  setPixelRatio() {}
+  setPixelRatio(ratio = 1) { this._pixelRatio = ratio; }
   render() {}
   dispose() {}
 }
 WebGLRenderer.instances = [];
+
+export class TextureLoader {
+  load() { return {}; }
+}
 
 export class AmbientLight {
   constructor() {}
@@ -57,10 +64,10 @@ export class BufferAttribute {
 export class ShaderMaterial {
   constructor(params = {}) {
     this.uniforms = params.uniforms || {
-      uTime: { value: 0 },
-      uMouse: { value: { x: 0, y: 0 } },
-      uTexture: { value: {} },
-      uHover: { value: 0 }
+      uTime:   { value: 0 },
+      uMouse:  { value: { x: 0, y: 0 } },
+      uTexture:{ value: {} },
+      uHover:  { value: 0 }
     };
     this.transparent = params.transparent;
     this.side = params.side;
@@ -82,7 +89,10 @@ export class PointsMaterial {
 }
 
 export class Points {
-  constructor() {}
+  constructor(geometry, material) {
+    this.geometry = geometry;
+    this.material = material;
+  }
 }
 
 export class CanvasTexture {

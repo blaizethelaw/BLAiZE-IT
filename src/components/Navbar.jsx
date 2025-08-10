@@ -17,19 +17,30 @@ export default function Navbar({ setCurrentPage, currentPage }) {
       className="fixed top-0 left-0 w-full z-50 bg-black/30 backdrop-blur-md transition-all duration-300"
       style={{ boxShadow: "0 2px 12px 0 rgba(0,0,0,0.12)" }}
     >
-        <div className="flex items-center max-w-7xl mx-auto px-4 py-2">
-        <img
-          src="https://i.imgur.com/VHCRCEn.png"
-          alt="BLAiZE IT Logo"
-          className="h-9 mr-3 cursor-pointer"
-          draggable={false}
+      <div className="flex items-center max-w-7xl mx-auto px-4 py-2">
+        {/* Clickable logo */}
+        <div
+          id="logo-container"
+          className="logo-wrapper mr-3 cursor-pointer select-none"
           onClick={() => setCurrentPage("home")}
-        />
-          <nav className="flex-1">
+          aria-label="Go to Home"
+          role="img"
+        >
+          <img
+            src="https://i.imgur.com/VHCRCEn.png"
+            alt="BLAiZE IT Logo"
+            className="h-9"
+            draggable={false}
+          />
+        </div>
+
+        {/* Nav */}
+        <nav className="flex-1" role="navigation" aria-label="Primary">
           <ul className="flex gap-6 text-lg font-semibold">
             {navItems.map((item) => (
               <li key={item.name}>
                 <button
+                  type="button"
                   onClick={() => setCurrentPage(item.path)}
                   className={`${
                     currentPage === item.path
@@ -43,7 +54,11 @@ export default function Navbar({ setCurrentPage, currentPage }) {
             ))}
           </ul>
         </nav>
-        <DarkModeToggle />
+
+        {/* Dark mode toggle on the right */}
+        <div className="ml-4">
+          <DarkModeToggle />
+        </div>
       </div>
     </header>
   );

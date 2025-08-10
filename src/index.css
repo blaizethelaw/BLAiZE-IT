@@ -1,65 +1,84 @@
+/* Fonts */
 @import '@fontsource/outfit/400.css';
 @import '@fontsource/outfit/500.css';
 @import '@fontsource/outfit/700.css';
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&family=Orbitron:wght@400;700&display=swap');
 
+/* Tailwind */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* Set the entire site background to slate */
-body {
-  @apply bg-blaize-slate text-white font-sans;
+/* Base resets/overrides */
+@layer base {
+  body {
+    @apply bg-black text-white font-sans;
+    font-family: 'Inter', ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, 'Noto Sans', 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', sans-serif;
+    overflow-x: hidden; /* Prevent horizontal scroll */
+  }
 }
 
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&family=Orbitron:wght@400;700&display=swap');
-
-body {
-    font-family: 'Inter', sans-serif;
-    background-color: #000000;
-    color: #ffffff;
-    overflow-x: hidden; /* Prevents horizontal scroll */
-}
-
+/* Optional font utility */
 .font-orbitron {
-    font-family: 'Orbitron', sans-serif;
+  font-family: 'Orbitron', sans-serif;
 }
 
+/* Scrollbar styling (WebKit) */
 ::-webkit-scrollbar {
-    width: 8px;
+  width: 8px;
 }
 ::-webkit-scrollbar-track {
-    background: #0a0a0a;
+  background: #0a0a0a;
 }
 ::-webkit-scrollbar-thumb {
-    background: linear-gradient(45deg, #8A2BE2, #4B0082);
-    border-radius: 4px;
+  background: linear-gradient(45deg, #8A2BE2, #4B0082);
+  border-radius: 4px;
 }
 ::-webkit-scrollbar-thumb:hover {
-    background: linear-gradient(45deg, #9932CC, #8A2BE2);
+  background: linear-gradient(45deg, #9932CC, #8A2BE2);
 }
 
+/* Glow animation */
 @keyframes glowing {
-    0% { box-shadow: 0 0 5px #8A2BE2, 0 0 10px #8A2BE2, 0 0 15px #8A2BE2; }
-    50% { box-shadow: 0 0 20px #4B0082, 0 0 30px #4B0082, 0 0 40px #4B0082; }
-    100% { box-shadow: 0 0 5px #8A2BE2, 0 0 10px #8A2BE2, 0 0 15px #8A2BE2; }
+  0% { box-shadow: 0 0 5px #8A2BE2, 0 0 10px #8A2BE2, 0 0 15px #8A2BE2; }
+  50% { box-shadow: 0 0 20px #4B0082, 0 0 30px #4B0082, 0 0 40px #4B0082; }
+  100% { box-shadow: 0 0 5px #8A2BE2, 0 0 10px #8A2BE2, 0 0 15px #8A2BE2; }
 }
 .glowing-button {
-    animation: glowing 3s infinite ease-in-out;
+  animation: glowing 3s infinite ease-in-out;
 }
 
+/* Nebula/flame idle animation */
 @keyframes nebulaFlame {
-    0% {
-        transform: translate3d(-2%, -2%, 0) scale(1);
-    }
-    50% {
-        transform: translate3d(2%, 2%, 0) scale(1.05);
-    }
-    100% {
-        transform: translate3d(-2%, -2%, 0) scale(1);
-    }
+  0%   { transform: translate3d(-2%, -2%, 0) scale(1); }
+  50%  { transform: translate3d(2%,  2%,  0) scale(1.05); }
+  100% { transform: translate3d(-2%, -2%, 0) scale(1); }
 }
-
 .animate-nebula {
-    animation: nebulaFlame 8s ease-in-out infinite;
+  animation: nebulaFlame 8s ease-in-out infinite;
 }
 
+/* Custom cursor for logo area */
+.logo-wrapper {
+  cursor: none;
+}
+.cursor-dot {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #fff;
+  pointer-events: none;
+  transform: translate(-50%, -50%) scale(1);
+  transition: transform 0.15s ease, opacity 0.15s ease;
+  opacity: 0;
+  z-index: 1000;
+}
+.cursor-dot.visible {
+  opacity: 1;
+}
+.cursor-dot.hover {
+  transform: translate(-50%, -50%) scale(1.5);
+}
