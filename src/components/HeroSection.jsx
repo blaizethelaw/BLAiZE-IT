@@ -1,13 +1,13 @@
 // src/components/HeroSection.jsx
 import React from "react";
-import AnimatedLogo from "./AnimatedLogo";
+import InteractiveLogo from "./InteractiveLogo";
 
 export default function HeroSection() {
   return (
     <div className="w-full bg-black">
       <section className="flex flex-col items-center justify-center text-center pt-12 md:pt-20">
         <div className="w-full flex justify-center items-center py-4">
-          <AnimatedLogo />
+          <InteractiveLogo />
         </div>
         <h1 className="text-4xl md:text-6xl font-extrabold bg-gradient-to-r from-blaize-green to-blaize-orange bg-clip-text text-transparent mb-6 -mt-8 md:-mt-12">
           BLAiZE IT Solutions
